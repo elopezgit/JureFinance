@@ -1,205 +1,130 @@
-# Guía de Uso y Funcionamiento — JureFinance (JureTravel)
+# Manual de Uso y Guía Funcional — JureFinance (JureTravel)
 
-## 1. Idea General y Propósito del Proyecto
+## 1. ¿Qué es JureFinance y para qué sirve?
 
-**JureFinance** es la aplicación web de gestión operativa, financiera y documental diseñada a medida para la agencia de viajes **JureTravel**.
+**JureFinance** es la herramienta de organización diaria de la agencia **JureTravel**. Fue diseñada para llevar el control exacto de los números reales de cada viaje vendido, desde que se arma la cotización hasta que se le paga a cada operador mayorista y se guardan los vouchers del pasajero.
 
-Su objetivo principal es **centralizar los números reales de la agencia** en un único entorno digital, cubriendo de punta a punta el circuito operativo diario: **cotización y arbitraje de proveedores → venta al pasajero → reserva y emisión de aéreos → liquidación por bloques (BCP) y pago a operadores mayoristas (TTOO) → cobranzas y expedientes digitales en Google Drive**.
+> **La idea central del sistema:**  
+> El presupuesto comercial que se le entrega al pasajero (el PDF con el precio final) se sigue armando en la plataforma del proveedor mayorista. **JureFinance es el registro interno de la agencia**: aquí anotamos **a cuánto se lo vendimos al cliente** y **a qué proveedor y a qué costo real se lo compramos nosotros**.
 
-> **Concepto clave de negocio:** El presupuesto comercial que recibe el viajero (PDF con markup incluido) se genera fuera de la aplicación con la herramienta del proveedor mayorista. **JureFinance actúa como el libro mayor interno de la agencia**, donde se registra cuánto paga realmente el cliente (`precioVenta`) frente a cuánto le cuesta realmente a la agencia cada servicio (`costo` de la oferta de compra elegida), permitiendo vender con el presupuesto de un proveedor y comprar el servicio a otro más económico o bonificado.
-
-### ¿Para qué sirve?
-1. **Registrar cotizaciones y calcular la ganancia real por servicio:** Permite comparar ofertas de múltiples operadores mayoristas (Aero, PriceTravel, Azabache, etc.) para un mismo servicio, elegir con cuál se compra efectivamente y obtener el margen real neto ($\text{Ganancia} = \sum \text{Precio de Venta} - \sum \text{Costo de Compra}$).
-2. **Controlar el ciclo de emisión de aéreos:** Lleva la trazabilidad de cada vuelo (`SinReservar` → `Reservado` → `Emitido`) y calcula automáticamente cuándo vence el pago al operador según la fecha de emisión.
-3. **Automatizar los bloques de pago (BCP) por proveedor:** Modela la operatoria real de consolidadores como **AERO**, donde los boletos emitidos dentro de un rango de días (p. ej., del 1 al 5 del mes) se acumulan en una "caja" y se liquidan todos juntos en una fecha de pago determinada (p. ej., el día 20).
-4. **Gestionar Cuentas a Pagar y Flujo de Caja Auditable:** Agrupa obligaciones individuales y liquidaciones consolidadas por proveedor, fecha de vencimiento y moneda (`USD` / `ARS`), permitiendo registrar pagos parciales, individuales o en bloque (reparto automático **FIFO**) y exportar el reporte mensual a **CSV**.
-5. **Seguir Cuentas a Cobrar y Métricas (Dashboard):** Organiza los cobros a clientes por mes y presenta indicadores ejecutivos de rentabilidad, ventas cerradas y alertas de vencimientos próximos.
-6. **Sincronizar Expedientes y Base de Datos con Google Drive:** Conecta en tiempo real la aplicación con las carpetas de clientes en Google Drive (vouchers, pasajes, DNI/pasaportes) y respalda toda la base operativa mediante un conector propio en **Google Apps Script (v3.1)**.
+### ¿Qué problemas resuelve en el día a día?
+1. **Permite vender con un proveedor y comprar con otro más barato:** Podés armar el presupuesto para el cliente tomando el precio de un operador (por ejemplo, Price), pero terminar comprando ese mismo vuelo o hotel en otro operador más económico (por ejemplo, Aero o Azabache). El sistema calcula tu **ganancia real** al instante.
+2. **Ordena la "caja" y los bloques de pago de los operadores (como AERO):** Cuando emitís un pasaje aéreo, no siempre se paga ese mismo día. Operadores como AERO juntan todos los boletos emitidos durante varios días (por ejemplo, del día 1 al 5 del mes) y te los cobran todos juntos en una fecha de vencimiento (por ejemplo, el día 20). El sistema agrupa esos vuelos solo y te dice exactamente cuánto tenés que pagar en cada vencimiento.
+3. **Evita olvidos de vencimientos:** Te avisa con anticipación qué pagos a proveedores están por vencer o vencidos y qué vuelos ya fueron reservados o emitidos.
+4. **Separa claramente Dólares (USD) y Pesos (ARS):** Nunca mezcla monedas en los totales del mes para que tu flujo de caja dé exactamente igual que lo que te reclama cada operador.
+5. **Conecta las ventas con los documentos del pasajero:** Vincula cada cliente con su carpeta de Google Drive donde se guardan pasajes, vouchers y fotos de DNI o pasaportes.
 
 ---
 
-## 2. Arquitectura y Stack Tecnológico
+## 2. El Circuito Completo de un Viaje (6 Pasos)
 
-La aplicación está construida como una **Single Page Application (SPA)** con persistencia híbrida (**Local-First + Sincronización Bidireccional con Google Drive** via Google Apps Script).
-
-| Capa | Tecnología | Propósito |
-| :--- | :--- | :--- |
-| **Frontend UI** | React 19 + Vite 8 | Interfaz reactiva modular con estado centralizado en `src/App.jsx`. |
-| **Estilos y Diseño** | CSS Variables nativas + Lucide React | Sistema de diseño limpio, adaptable y con iconografía semántica. |
-| **Lógica de Negocio** | Servicios ES Modules (`src/services/`) | Motores puros de cálculo para servicios, bloques TTOO, liquidaciones FIFO y flujo de caja. |
-| **Persistencia Local** | `localStorage` | Caché inmediata en el navegador para operación sin latencia. |
-| **Backend / Cloud Sync** | Google Apps Script Web App (`v3.1`) | Conector serverless (`google-apps-script/Code.gs`) que sincroniza la base `jurefinance_db.json` y el árbol precalculado `jurefinance_tree.json` en Google Drive. |
-| **Calidad y Testing** | Vite SSR + Node + Oxlint | Suite de pruebas del modelo matemático (`test:modelo`), renderizado de vistas (`test:ui`) y smoke test en navegador real (`test:runtime`). |
-
-```mermaid
-flowchart LR
-    UI["Módulos React (Cotizador, Pagos, Drive)"] <--> APP["Estado Central (App.jsx)"]
-    APP <--> LS[("localStorage (Caché Local)")]
-    APP <-->|Sync 60s / Focus| GAS["Google Apps Script Web App (v3.1)"]
-    GAS <--> GD[("Google Drive (jurefinance_db.json + Carpetas Clientes)")]
-```
+1. **Preparar el Mes:** Cargar o revisar las fechas de pago por bloques de cada operador mayorista para el mes en curso.
+2. **Cotizar:** Cargar el viaje en el Cotizador indicando el precio de venta al cliente y los costos reales de los proveedores.
+3. **Cerrar la Venta:** Actualizar el estado de la operación a medida que el pasajero responde (`Borrador` → `Enviada` → `Aceptada` → `Pagada`).
+4. **Emitir el Aéreo:** Cuando se emite el boleto, pasar el estado del vuelo a `Emitido` y anotar la fecha de emisión para que el sistema calcule cuándo vence su pago.
+5. **Pagar al Proveedor:** Revisar el Calendario de Pagos / Flujo de Caja y registrar el pago individual o del bloque completo en su fecha de vencimiento.
+6. **Armar la Carpeta Drive:** Guardar en la carpeta del cliente los pasajes emitidos, vouchers de hotel/traslados y fotos de DNI o pasaportes.
 
 ---
 
-## 3. Circuito Operativo de la Agencia
+## 3. Cómo Usar Cada Pantalla del Sistema (Paso a Paso)
 
-El flujo de trabajo diario dentro de **JureFinance** sigue 6 etapas principales:
+### 3.1. Pantalla "Cotizador" — Cómo cargar un viaje nuevo
+Se accede desde el menú lateral izquierdo o tocando el botón **"+ Nueva Cotización"** arriba a la derecha. Está dividido en **3 pasos guiados**:
 
-1. **Configuración de Proveedores y Calendario Mensual (BCP):**
-   - Se dan de alta los operadores mayoristas (**Aero**, **Price**, **Azabache**, etc.).
-   - En **Configuración Mensual**, se definen para cada proveedor y mes los bloques de días de emisión y su fecha de pago asociada (manualmente, con plantilla estándar, por regla automática o copiando del mes anterior).
-2. **Carga de la Cotización (Wizard de 3 pasos):**
-   - **Paso 1 (Datos del viaje):** Se ingresa el cliente titular, nombres de pasajeros (`pasajeros[]`), destino, fechas del viaje, cantidad de PAX, moneda (`USD` o `ARS`) y se tildan los proveedores con los que se cotiza.
-   - **Paso 2 (Servicios y costos):** Por cada servicio (Aéreo, Alojamiento, Traslado, Asistencia, etc.) se carga el **precio de venta total** informado al cliente y una o varias **ofertas de compra** de distintos proveedores. Se marca con el selector **"Comprar"** cuál es la oferta ganadora.
-   - **Paso 3 (Resumen y Guardado):** El sistema calcula automáticamente el total de venta, el costo real, la ganancia neta y el margen porcentual, habilitando una vista de **Resumen Interno Imprimible**.
-3. **Seguimiento Comercial (Estados de Cotización):**
-   - La cotización avanza por los estados: `Borrador` → `Enviada` → `Aceptada` → `Pagada` (o `Vencida`).
-4. **Reserva y Emisión de Aéreos:**
-   - En los servicios de tipo aéreo se controla el estado del boleto: `SinReservar` → `Reservado` (con fecha de reserva) → `Emitido` (con `fechaEmision`).
-   - Al marcar un vuelo como **Emitido**, si la oferta no tenía una fecha de vencimiento manual, el sistema consulta la **Configuración Mensual** del proveedor de compra y asigna automáticamente la fecha de pago correspondiente al bloque en que cayó la emisión.
-5. **Liquidación y Pago a Proveedores (Cuentas a Pagar):**
-   - Todas las ofertas de compra con costo mayor a `0` generan obligaciones en el calendario.
-   - En la vista de **Liquidación por proveedor / Flujo de Caja BCP**, los boletos emitidos en un mismo bloque aparecen consolidados bajo una única fecha de vencimiento.
-   - La agencia puede pagar un ticket individual o registrar un **pago consolidado del bloque**, que el sistema reparte automáticamente en orden **FIFO** (primero el más antiguo) entre los servicios que componen esa liquidación.
-6. **Cobranza al Cliente y Expediente en Drive:**
-   - Se monitorean los cobros mensuales derivados de las ventas y se archivan en la carpeta de Google Drive del cliente los vouchers, pasajes emitidos y copias de DNI/pasaportes.
+- **Paso 1: Datos del Viaje y Proveedores**
+  - Completá el nombre del **Cliente titular**, su teléfono/email, el **Destino**, las fechas del viaje, la cantidad de pasajeros (**PAX**) y la **Moneda** (Dólares USD o Pesos ARS).
+  - Podés anotar los **nombres de cada pasajero** para identificarlos fácilmente después al pagar los tickets.
+  - Tildá con qué **Proveedores** (por ejemplo: Aero, Price, Azabache) estás cotizando este viaje y tocá **"Siguiente"**.
+
+- **Paso 2: Servicios y Costos Reales**
+  - Agregá cada servicio del viaje (**Aéreo, Hotel, Traslado, Asistencia, Excursión, Crucero**).
+  - En **Precio de Venta al Cliente**, escribí el importe total que le cobrás al cliente por ese servicio (el total de todos los pasajeros juntos, tal como figura en el presupuesto que le mandaste).
+  - Abajo, en **Ofertas de Compra**, cargá cuánto te cobra de costo neto cada proveedor por ese servicio. Si pediste precio en dos operadores, podés cargar las dos ofertas para compararlas y marcar con el botón **"Comprar"** cuál es la que realmente vas a contratar.
+  - **Importante para Vuelos (Aéreos):** Completá el origen, destino, aerolínea y el **Estado del Vuelo**: `Sin Reservar` → `Reservado` → `Emitido`. Cuando lo marques como **Emitido** y pongas la **Fecha de Emisión**, el sistema calculará solo qué día vence el pago al operador.
+
+- **Paso 3: Resumen y Guardar**
+  - Revisá el cuadro final: verás el **Total de Venta**, el **Costo Real de Compra**, tu **Ganancia Real** en dinero y el porcentaje de margen.
+  - Podés tocar **"Ver resumen interno"** para imprimir una hoja de control interno para la agencia.
+  - Tocá **"Guardar Cotización"** para dejarla registrada.
 
 ---
 
-## 4. Guía de Uso por Módulo
-
-### 4.1. Cotizador (`src/components/Cotizador/`)
-Es el corazón operativo para presupuestar y registrar ventas.
-- **Wizard en 3 pasos (`CotizadorWizard.jsx`):**
-  1. **Datos del Viaje:** Cliente, contacto, destino, fechas, cantidad de pasajeros, lista nominal de pasajeros y selección de operadores participantes.
-  2. **Servicios y Costos:** Permite agregar múltiples renglones de servicios (`Aéreo`, `Hotel`, `Traslado`, `Asistencia`, `Excursión`, `Crucero`, `Otro`).
-     - En cada servicio se carga el `precioVenta` (importe total que abona el cliente por todos los pasajeros) y las `ofertas[]` de los proveedores.
-     - Permite comparar precios entre proveedores y seleccionar la **oferta de compra** (`ofertaCompraId`). Si un servicio es bonificado (costo `0`), suma a la ganancia sin generar deuda con el proveedor.
-     - Para servicios **Aéreos**, despliega los campos de itinerario (ruta, aerolínea, fechas) y estado del boleto (`SinReservar`, `Reservado`, `Emitido`).
-  3. **Resumen y Guardado:** Muestra el desglose financiero final, permite cambiar el estado comercial de la operación y abrir el modal **Resumen Interno** listo para imprimir o guardar en PDF.
-
-### 4.2. Historial de Cotizaciones (`src/components/Historial/HistorialView.jsx`)
-- Listado completo de todas las cotizaciones registradas con buscador por cliente, destino o ID y filtros por estado (`Borrador`, `Enviada`, `Aceptada`, `Pagada`, `Vencida`).
-- Acciones rápidas por fila: **Editar** (abre la cotización en el Cotizador), **Duplicar** (crea una copia en estado `Borrador`), **Abrir Carpeta en Drive** y **Eliminar**.
-
-### 4.3. Configuración Mensual BCP (`src/components/Configuracion/ConfiguracionMensualView.jsx`)
-Administra las reglas de calendario ("día de emisión → fecha de pago") por operador y por mes (`YYYY-MM`):
-- **Edición manual de bloques:** Define rangos `DiaInicio` – `DiaFin` y su `FechaPago` (con vista previa automática del rango en formato `DD/MM/YYYY`).
-- **Generador por regla automática:** Crea bloques de $N$ días de duración y asigna el vencimiento sumando días corridos o fijando un día posterior al cierre del bloque.
-- **Plantilla estándar y Copia entre meses:** Permite aplicar en un clic la estructura habitual de bloques o clonar la configuración de otro mes adaptando automáticamente la cantidad de días del mes (28, 29, 30 o 31 días).
-- **Indicador de cobertura:** Valida visualmente si todos los días del mes están cubiertos sin huecos ni solapamientos.
-
-### 4.4. Cuentas a Pagar a Proveedores (`src/components/Cobranzas/CalendarioPagosView.jsx` y `FlujoCajaBCP.jsx`)
-Gestiona el pasivo con los operadores mayoristas mediante tres herramientas integradas:
-1. **Calendario Mensual de Vencimientos:** Grilla visual día por día con semáforo de estados (`Pendiente`, `Parcial`, `Pagado`, `Vencido`), filtros por proveedor y alta de compromisos manuales.
-2. **Liquidación por Proveedor (Pago en Bloque):** Agrupa todas las obligaciones que comparten `proveedor + fecha de vencimiento + moneda`. Permite abonar el total o un monto parcial del bloque completo; el algoritmo `repartirPagoEnLiquidacion` distribuye el dinero secuencialmente (**FIFO**) entre los vuelos/servicios del bloque.
-3. **Reporte de Flujo de Caja Auditable (`FlujoCajaBCP`):**
-   - Muestra el total general del mes separado estrictamente por moneda (`USD` y `ARS` nunca se mezclan).
-   - Desglosa por cada fecha de vencimiento y proveedor todos los tickets incluidos: cliente titular, nombres de pasajeros, PAX, código de cotización, destino, fecha de emisión y bloque BCP aplicado.
-   - Incluye botón de **Exportación a CSV** compatible con Excel y botón para cargar **10 vuelos de demostración** para pruebas operativas.
-
-### 4.5. Cuentas a Cobrar (`src/components/Cobranzas/CalendarioCobrosView.jsx`)
-- Proyecta los ingresos de la agencia derivados del `precioVenta` de las cotizaciones activas, organizados por mes y estado de cobro.
-
-### 4.6. Directorio de Operadores (`src/components/Operadores/OperadoresView.jsx`)
-- Catálogo de proveedores mayoristas (nombre, especialidad, contacto, comisión de referencia y notas).
-- Cualquier proveedor dado de alta aquí queda disponible inmediatamente en el **Paso 1 del Cotizador** y en la **Configuración Mensual BCP**.
-
-### 4.7. Dashboard Ejecutivo (`src/components/Dashboard/DashboardView.jsx`)
-- Panel de métricas clave (KPIs): volumen total de ventas, costo neto de operadores, ganancia real acumulada, margen promedio y alertas tempranas de vencimientos urgentes (próximos 3 días o vencidos).
-
-### 4.8. Expedientes en Google Drive (`src/components/DriveViewer/DriveView.jsx` y `DriveConfigModal.jsx`)
-- Explorador integrado de las carpetas de clientes alojadas en Google Drive.
-- Permite navegar subcarpetas, previsualizar/abrir documentos (vouchers, tickets aéreos, pasaportes), subir nuevos archivos directamente desde la interfaz y configurar la URL del conector de **Google Apps Script v3.1**.
+### 3.2. Pantalla "Historial" — Cómo buscar y actualizar tus cotizaciones
+Aquí quedan guardadas todas las operaciones cargadas. Desde esta lista podés:
+- **Buscar rápido:** Filtrar por nombre del cliente, destino o por el estado de la venta.
+- **Seguir el estado del viaje:**
+  - `Borrador`: Todavía lo estás armando.
+  - `Enviada`: Ya le mandaste el presupuesto al pasajero y estás esperando respuesta.
+  - `Aceptada`: El pasajero confirmó el viaje (momento de reservar y emitir).
+  - `Pagada`: El pasajero ya abonó su viaje.
+  - `Vencida`: El pasajero no confirmó a tiempo.
+- **Botones de acción:** Podés **Editar** la cotización para cambiar costos o marcar un vuelo como emitido, **Duplicar** el viaje si otro cliente te pide el mismo destino, o **Abrir Drive** para ir directo a los documentos de ese pasajero.
 
 ---
 
-## 5. Modelo Matemático y Reglas de Negocio Clave
+### 3.3. Pantalla "Configuración Mensual TTOs" — Cómo armar los bloques de pago del mes
+Al empezar cada mes, cada operador mayorista (especialmente AERO) informa su calendario de cierres y pagos. En esta pantalla configurás esas reglas una sola vez por mes:
+- Elegí el **Mes** (por ejemplo, Octubre 2026) y el **Proveedor**.
+- Definí los **Bloques de Emisión** indicando desde qué día hasta qué día abarca cada bloque y qué día se paga. Por ejemplo:
+  - *Bloque 1:* Vuelos emitidos del **día 1 al 5** → se pagan el **día 20**.
+  - *Bloque 2:* Vuelos emitidos del **día 6 al 10** → se pagan el **día 23**.
+- **Herramientas rápidas para ahorrar tiempo:**
+  - **Generar por regla automática:** Le decís cada cuántos días corta el bloque (por ejemplo, cada 5 días) y cuántos días después se paga, y el sistema arma todo el mes solo.
+  - **Copiar de otro mes:** Copia los bloques del mes pasado y los adapta automáticamente si el mes nuevo tiene 28, 30 o 31 días.
+  - **Semáforo de Cobertura:** Arriba te avisa en verde cuando todos los días del mes están cubiertos sin días sueltos ni superpuestos.
 
-| Concepto | Regla en el Sistema |
+---
+
+### 3.4. Pantalla "Calendario de Pagos" — Cómo controlar vencimientos y pagar a proveedores
+Es la pantalla financiera principal para saber cuánto, cuándo y a quién hay que pagarle. Tiene tres secciones complementarias:
+
+1. **Reporte de Flujo de Caja por Día de Vencimiento (arriba):**
+   - Te muestra el **Total General del Mes** separado por moneda (cuántos Dólares USD y cuántos Pesos ARS tenés que pagar en el mes).
+   - Agrupa los pagos día por día según su **Fecha de Vencimiento**. Dentro de cada fecha ves qué proveedor vence y el listado detallado de todos los boletos que entran en esa liquidación (con nombre del cliente, pasajeros, cantidad de PAX, destino, fecha en que se emitió y a qué bloque pertenece).
+   - Botón **"Exportar CSV"**: Descarga una planilla lista para abrir en Excel con todo el detalle del mes.
+2. **Liquidación Consolidada por Bloque:**
+   - Cuando le transferís a un proveedor como AERO todo el bloque junto (por ejemplo, 4 vuelos que vencen el día 20), tocás **"Registrar Pago de Liquidación"**.
+   - Si pagás el total, los 4 vuelos quedan marcados como **Pagados** en un solo paso. Si hacés una entrega o pago parcial, el sistema reparte el dinero automáticamente empezando por los boletos más antiguos y deja el saldo pendiente exacto.
+3. **Calendario Mensual Visual (abajo):**
+   - Muestra el almanaque del mes con cada vencimiento ubicado en su casillero.
+   - También te permite cargar un **Compromiso o Pago Manual** si tenés que anotar un pago a un operador que no vino de una cotización.
+
+---
+
+### 3.5. Otras Pantallas del Menú
+- **Calendario de Cobros:** Te muestra mes por mes el dinero que tienen que abonar los clientes por los viajes vendidos.
+- **Operadores (Proveedores):** Es la agenda de tus operadores mayoristas. Si empezás a trabajar con un proveedor nuevo, lo agregás acá y enseguida aparece disponible en el Cotizador y en la Configuración Mensual.
+- **Dashboard (Panel Principal):** Resumen ejecutivo con tus números globales: total vendido, costo total, ganancia neta acumulada y alertas de pagos urgentes (los que vencen en los próximos 3 días).
+- **Expedientes Drive:** Te permite ver las carpetas de tus clientes en Google Drive, abrir los pasajes o vouchers guardados y subir archivos nuevos directamente desde la pantalla.
+
+---
+
+## 4. Ejemplos Prácticos del Día a Día
+
+### Ejemplo 1: Vendo con el presupuesto de un operador y compro en otro más barato
+Le armás un presupuesto a un cliente en la plataforma de **Price** por **USD 8.700** (donde el costo neto en Price era USD 8.450). Pero antes de emitir, ves que ese mismo vuelo en **Aero** cuesta **USD 8.000**.
+- **¿Cómo se carga?** En el Cotizador ponés Precio de Venta: `8.700`. En ofertas cargás Price (`8.450`) y Aero (`8.000`), y marcás **"Comprar" en Aero**.
+- **Resultado:** El sistema calcula tu ganancia real de **USD 700** y agenda el pago de **USD 8.000 a Aero**. La oferta de Price queda guardada solo como referencia para que recuerdes con qué presupuesto se vendió.
+
+### Ejemplo 2: Un servicio viene bonificado o sin costo para la agencia
+En el presupuesto al cliente le cobraste **USD 250** por un traslado, pero el operador mayorista te lo bonificó al 100% por comprar el hotel.
+- **¿Cómo se carga?** Ponés Precio de Venta: `250` y Costo de la oferta de compra: `0`.
+- **Resultado:** Esos USD 250 se suman enteros a tu ganancia del viaje y **no se genera ninguna deuda** en el Calendario de Pagos porque el costo es cero.
+
+### Ejemplo 3: Emito varios vuelos en la semana y los pago juntos en la fecha del bloque
+Emitiste un vuelo el día 1 de octubre (USD 2.500), otro el día 3 (USD 1.800) y otro el día 5 (USD 3.200) con AERO. En tu Configuración Mensual indicaste que las emisiones del 1 al 5 vencen el **20 de octubre**.
+- **Resultado:** El sistema agrupa automáticamente los 3 vuelos para el **20 de octubre** por un total de **USD 7.500**. Ese día hacés una sola transferencia y la registrás en el botón de la liquidación del bloque.
+
+---
+
+## 5. Preguntas Frecuentes de Uso
+
+| Pregunta | Respuesta práctica |
 | :--- | :--- |
-| **Importes por Servicio** | Tanto `precioVenta` como el `costo` de cada oferta representan el **total del servicio para todo el grupo de pasajeros (PAX)**, nunca un valor unitario por pasajero. El valor por pasajero se exhibe únicamente como referencia informativa. |
-| **Ganancia Real** | $\text{Ganancia} = \sum \text{precioVenta} - \sum \text{costo}(\text{ofertaCompra})$. Las ofertas alternativas quedan guardadas como referencia comparativa pero no afectan ni la ganancia ni los pagos. |
-| **Servicios Bonificados** | Si la oferta de compra seleccionada tiene `costo = 0`, el servicio suma su `precioVenta` a la ganancia pero **no genera obligación de pago** en el calendario. |
-| **Overlay de Pagos (`pagosTTOO`)** | Los pagos realizados **no mutan la cotización**: se almacenan en una colección separada y se cruzan en tiempo real mediante la clave `${cotizacionId}::${itemId}` (manteniendo compatibilidad automática con claves históricas mediante `clavesAlias`). |
-| **Separación Estricta de Monedas** | Los cálculos de liquidaciones y totales mensuales de flujo de caja agrupan siempre por moneda (`USD` / `ARS`), evitando sumar divisas distintas. |
+| **¿Los precios y costos se cargan por pasajero o por el total del viaje?** | Siempre se carga el **importe total del grupo completo** (todos los pasajeros sumados). El sistema divide automáticamente por la cantidad de pasajeros solo para mostrarte el valor individual como referencia. |
+| **¿Qué pasa si emito un vuelo y no le pongo fecha de vencimiento manual?** | Con solo marcar el vuelo como **Emitido** y poner su **Fecha de Emisión**, el sistema busca en la Configuración Mensual de ese proveedor a qué bloque pertenece ese día y le asigna solo la fecha de pago correspondiente. |
+| **¿Puedo registrar una seña o pago parcial a un proveedor?** | Sí. Podés registrar cualquier monto menor al total (tanto en un servicio individual como en un bloque completo). El estado pasará a **Parcial** y el calendario te mostrará exactamente cuánto saldo queda pendiente por pagar. |
+| **¿Se me pierde lo que estoy cargando en el Cotizador si voy a mirar otra pantalla?** | No. Mientras estás armando una cotización podés ir a consultar el Historial, los Operadores o el Calendario de Pagos y, al volver al Cotizador, tus datos siguen exactamente donde los dejaste. |
 
----
-
-## 6. Estructura del Proyecto
-
-```text
-JureFinance/
-├── docs/
-│   ├── FLUJO_CLIENTE.md           # Especificación detallada del circuito operativo de JureTravel
-│   └── CONTEXTO_Y_ESTADO.md       # Estado técnico, decisiones de arquitectura y roadmap
-├── google-apps-script/
-│   ├── Code.gs                    # Código fuente del conector Web App v3.1 para Google Drive
-│   └── DESPLIEGUE_v3.1.md         # Guía paso a paso para publicar el conector en Apps Script
-├── scripts/
-│   ├── probarModelo.mjs           # Suite de 65 asertos sobre servicios, bloques BCP y pagos FIFO
-│   ├── probarUI.mjs               # Pruebas de renderizado SSR de las vistas financieras
-│   └── probarRuntime.mjs          # Smoke test automatizado en navegador headless
-├── src/
-│   ├── components/
-│   │   ├── Calendario/            # Grilla mensual reutilizable
-│   │   ├── Cobranzas/             # CalendarioPagosView, CalendarioCobrosView y FlujoCajaBCP
-│   │   ├── Configuracion/         # ConfiguracionMensualView (BCP) y DriveConfigModal
-│   │   ├── Cotizador/             # CotizadorView, QuotePreviewModal y Wizard de 3 pasos
-│   │   ├── Dashboard/             # DashboardView (KPIs y métricas de ganancia)
-│   │   ├── DriveViewer/           # Explorador de expedientes en Google Drive
-│   │   ├── Historial/             # HistorialView (gestión de cotizaciones guardadas)
-│   │   ├── Operadores/            # OperadoresView (ABM de proveedores TTOO)
-│   │   ├── Header.jsx             # Barra superior con alertas y botón de sincronización Drive
-│   │   └── Sidebar.jsx            # Navegación lateral con contadores de vencimientos
-│   ├── data/
-│   │   ├── initialData.js         # Semilla inicial de operadores, cotizaciones y bloques BCP
-│   │   └── demoVuelos.js          # Generador de 10 vuelos emitidos de prueba
-│   ├── services/
-│   │   ├── serviciosService.js    # Normalización de servicios, ofertas de compra y márgenes
-│   │   ├── ttoService.js          # Motor de bloques BCP, cobertura mensual y fechas de pago
-│   │   ├── calendarioService.js   # Agenda de obligaciones, liquidaciones FIFO y exportación CSV
-│   │   ├── cobroService.js        # Proyección de cobranzas a pasajeros
-│   │   └── driveService.js        # Sincronización bidireccional con Google Drive y caché local
-│   ├── App.jsx                    # Controlador principal de estado y sincronización
-│   └── main.jsx                   # Punto de entrada React
-├── GUIA_DE_USO_Y_FUNCIONAMIENTO.md # Esta guía general de uso y funcionamiento
-├── README.md                      # Resumen rápido del repositorio
-└── package.json                   # Dependencias y scripts de ejecución
-```
-
----
-
-## 7. Instalación, Uso y Verificación
-
-### 7.1. Requisitos Previos
-- **Node.js** 20 o superior.
-- **npm** (incluido con Node.js).
-
-### 7.2. Comandos Principales
-
-```bash
-# 1. Instalar dependencias
-npm install
-
-# 2. Iniciar servidor de desarrollo (http://localhost:5173)
-npm run dev
-
-# 3. Ejecutar pruebas del modelo de negocio y agenda de pagos (65 validaciones)
-npm run test:modelo
-
-# 4. Ejecutar pruebas de renderizado de interfaz (SSR)
-npm run test:ui
-
-# 5. Ejecutar linter de código
-npm run lint
-
-# 6. Compilar versión de producción (carpeta dist/)
-npm run build
-```
-
-### 7.3. Conexión con Google Drive (Opcional en local, requerido en producción)
-1. Abrir el módulo **Expedientes Drive** en el menú lateral y pulsar en **Configurar Drive**.
-2. Copiar el código del conector **v3.1** (o tomarlo de `google-apps-script/Code.gs`) y publicarlo como **Aplicación Web** en <https://script.google.com> siguiendo los pasos de `google-apps-script/DESPLIEGUE_v3.1.md`.
-3. Pegar la URL `/exec` generada y el ID de la carpeta raíz de Google Drive en el modal de configuración.
-4. A partir de ese momento, **JureFinance** sincronizará automáticamente cada 60 segundos y al recuperar el foco de la ventana.
+> **Consejo para probar el sistema sin miedo:** En la pantalla **Calendario de Pagos** tenés el botón **"Cargar ejemplo (10 vuelos)"**, que carga automáticamente 10 operaciones de muestra repartidas en distintos bloques del mes para que puedas practicar cómo se ven los vencimientos, cómo se exporta el Excel y cómo se registran los pagos por bloque.
