@@ -46,11 +46,14 @@ const VUELOS = [
   { cliente: 'SILVA NICOLÁS', destino: 'Recife (REC)', pax: 2, neto: 1120 }
 ];
 
-// Hotel opcional en algunos vuelos (para ver liquidaciones de Price/Azabache).
+// Hotel y traslado reservados en Azabache/Price (vencen según la grilla mensual 1-5 -> día 20, etc.)
 const HOTELES = {
-  1: { proveedor: 'Price', nombre: 'Bariloche · Hotel Catedral 4*', neto: 620 },
-  4: { proveedor: 'Azabache', nombre: 'Salta · Hotel Solar de la Plaza', neto: 180 },
-  7: { proveedor: 'Price', nombre: 'Punta Cana · Riu Palace (All Inclusive)', neto: 2100 }
+  0: { proveedor: 'Azabache', nombre: 'Bariloche · Hotel Cacique Inacayal + Traslado', neto: 680, traslado: 95 },
+  1: { proveedor: 'Price', nombre: 'Bariloche · Hotel Catedral 4*', neto: 620, traslado: 80 },
+  3: { proveedor: 'Azabache', nombre: 'Madrid · Hotel Riu Plaza España', neto: 1450, traslado: 120 },
+  4: { proveedor: 'Azabache', nombre: 'Salta · Hotel Solar de la Plaza', neto: 180, traslado: 45 },
+  5: { proveedor: 'Azabache', nombre: 'Cancún · Riu Palace Las Américas All Inclusive', neto: 1890, traslado: 110 },
+  7: { proveedor: 'Azabache', nombre: 'Punta Cana · Riu Palace (All Inclusive)', neto: 2100, traslado: 140 }
 };
 
 /** Precio de venta con 20% de ganancia, redondeado cada 10 USD por pax. */
@@ -102,12 +105,35 @@ export function buildDemoVuelosEmitidos(hoy = new Date()) {
             nombre: 'Pasajes Aéreos Ida y Vuelta',
             proveedor: 'Aero',
             montoTotalNeto: dato.neto,
-            vencimientoTTOO: '', // se calcula desde la fecha de emisión
-            detalles: `Emitido el ${dia} ${MESES_ABREV[mesIdx]} · bloque de emisión ${bloque.rango}`,
+            precioVenta: Math.round(dato.neto * 1.25),
+            vencimientoTTOO: '', // se calcula desde la fecha de emisión (24-48 hs o bloque BCP)
+            detalles:
+              n <= 4
+                ? `Emitido confirmado el ${dia} ${MESES_ABREV[mesIdx]} · Pago a Aero en ${n % 2 === 0 ? 48 : 24} hs`
+                : `Emitido el ${dia} ${MESES_ABREV[mesIdx]} · bloque de emisión ${bloque.rango}`,
             politicaReembolso: 'NO REEM',
             estadoVuelo: 'Emitido',
             fechaReserva,
-            fechaEmision
+            fechaEmision,
+            reglaVencimiento: n <= 4 ? '24-48hs' : 'bcp',
+            plazoPagoHoras: n % 2 === 0 ? 48 : 24,
+            ofertaCompraId: `of-aero-demo-${n}`,
+            ofertas: [
+              {
+                id: `of-aero-demo-${n}`,
+                proveedorId: 'aero',
+                proveedor: 'Aero',
+                costo: dato.neto,
+                esBasePresupuesto: false
+              },
+              {
+                id: `of-azabache-demo-${n}`,
+                proveedorId: 'azabache',
+                proveedor: 'Azabache',
+                costo: Math.round(dato.neto * 1.07),
+                esBasePresupuesto: true
+              }
+            ]
           },
           hotel: hotel
             ? {
@@ -115,28 +141,44 @@ export function buildDemoVuelosEmitidos(hoy = new Date()) {
                 nombre: hotel.nombre,
                 proveedor: hotel.proveedor,
                 montoTotalNeto: hotel.neto,
-                vencimientoTTOO: sumarDias(fechaEmision, 35),
-                detalles: 'Reserva de alojamiento',
+                precioVenta: Math.round(hotel.neto * 1.2),
+                vencimientoTTOO: '', // se calcula por grilla mensual según fechaReserva (ej. 1-5 -> día 20)
+                estadoReserva: 'Reservado',
+                fechaReserva: fechaEmision,
+                detalles: `Reservado en ${hotel.proveedor} el ${dia} ${MESES_ABREV[mesIdx]} · bloque ${bloque.rango}`,
                 politicaReembolso: 'Reembolsable hasta vencimiento'
               }
             : {
                 activo: false,
                 nombre: '',
-                proveedor: 'Price',
+                proveedor: 'Azabache',
                 montoTotalNeto: 0,
                 vencimientoTTOO: '',
                 detalles: '',
                 politicaReembolso: 'Reembolsable hasta vencimiento'
               },
-          traslados: {
-            activo: false,
-            nombre: 'Traslados In / Out',
-            proveedor: 'Price',
-            montoTotalNeto: 0,
-            vencimientoTTOO: '',
-            detalles: '',
-            politicaReembolso: 'Incluido'
-          },
+          traslados: hotel?.traslado
+            ? {
+                activo: true,
+                nombre: 'Traslados Aeropuerto / Hotel / Aeropuerto',
+                proveedor: hotel.proveedor,
+                montoTotalNeto: hotel.traslado,
+                precioVenta: Math.round(hotel.traslado * 1.2),
+                vencimientoTTOO: '', // se calcula por grilla mensual según fechaReserva
+                estadoReserva: 'Reservado',
+                fechaReserva: fechaEmision,
+                detalles: `Reservado en ${hotel.proveedor} · bloque ${bloque.rango}`,
+                politicaReembolso: 'Incluido'
+              }
+            : {
+                activo: false,
+                nombre: 'Traslados In / Out',
+                proveedor: 'Azabache',
+                montoTotalNeto: 0,
+                vencimientoTTOO: '',
+                detalles: '',
+                politicaReembolso: 'Incluido'
+              },
           asistencia: {
             activo: false,
             nombre: '',

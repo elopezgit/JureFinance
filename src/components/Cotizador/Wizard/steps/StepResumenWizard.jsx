@@ -1,8 +1,10 @@
-// StepResumenWizard.jsx - Último paso: números finales y guardado.
+// StepResumenWizard.jsx - Último paso: números finales separados por proveedor y guardado.
 //
-// Muestra, por cada servicio, el precio de venta al cliente, el costo real de la
-// oferta de compra y la ganancia. Los importes son totales del viaje; también se
-// muestra el equivalente por pasajero.
+// Muestra, por cada servicio:
+//   - Costo real de compra (ej. Aero en vuelos / Azabache en hotel y traslado)
+//   - Costo referencia en el Constructor PDF (ej. Azabache)
+//   - Precio final al cliente y ganancia neta
+//   - Fecha y regla de pago al proveedor (24-48 hs post-emisión vs Grilla mensual 1-5 -> día 20)
 import React from 'react';
 import {
   FileText,
@@ -16,17 +18,27 @@ import {
   Trash2,
   Users,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  CalendarClock,
+  Building2
 } from 'lucide-react';
 import {
   SECCION_LABEL,
   costoCompraItem,
+  costoBasePresupuestoItem,
+  ahorroArbitrajeItem,
   precioVentaItem,
   gananciaItem,
   ofertaCompraDe,
+  ofertaBasePresupuestoDe,
+  desgloseCostosPorProveedor,
+  totalCostoBasePresupuestoItems,
+  totalAhorroArbitrajeItems,
   formatoMoneda,
   formatoPct
 } from '../wizardUtils';
+import { getBloqueBCP, getFechaPagoAereoEmitido } from '../../../../services/ttoService';
+import { formatFechaLarga } from '../../../../services/calendarioService';
 
 const TIPOS_ORDEN = ['aereo', 'hotel', 'traslados', 'asistencia', 'extra'];
 
@@ -43,6 +55,8 @@ export default function StepResumenWizard({
   destino,
   fechaViajeInicio,
   fechaViajeFin,
+  fechaCotizacion,
+  configMensual = [],
   pax,
   moneda,
   items = [],
@@ -60,6 +74,10 @@ export default function StepResumenWizard({
   const activos = items.filter((item) => item.activo);
   const inactivos = items.filter((item) => !item.activo);
 
+  const totalCostoBasePDF = totalCostoBasePresupuestoItems(items);
+  const totalAhorroAero = totalAhorroArbitrajeItems(items);
+  const desgloseProveedores = desgloseCostosPorProveedor(items);
+
   const serviciosVentaCero = activos.filter(
     (item) => costoCompraItem(item) > 0 && precioVentaItem(item) <= 0
   );
@@ -69,9 +87,38 @@ export default function StepResumenWizard({
     servicios: items.filter((item) => item.tipo === tipo)
   })).filter((grupo) => grupo.servicios.length > 0);
 
+  const obtenerResumenVencimiento = (item) => {
+    const compra = ofertaCompraDe(item);
+    if (!compra) return 'Sin proveedor';
+    if (compra.vencimientoTTOO) {
+      return `Vence ${formatFechaLarga(compra.vencimientoTTOO)} (manual)`;
+    }
+    if (item.tipo === 'aereo') {
+      if (!item.fechaEmision) {
+        return 'Vuelo: paga a 24-48 hs al confirmar emisión';
+      }
+      if (item.reglaVencimiento !== 'bcp') {
+        const horas = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
+        const f = getFechaPagoAereoEmitido(item.fechaEmision, horas);
+        return `⚡ Pago en ${horas} hs post-emisión: ${formatFechaLarga(f)}`;
+      }
+      const b = getBloqueBCP(configMensual, compra.proveedor || 'Aero', item.fechaEmision);
+      return b ? `📅 Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}` : 'Sin bloque configurado';
+    }
+    if (item.estadoReserva === 'SinReservar') {
+      return 'Sin reservar aún';
+    }
+    const fechaRef = item.fechaReserva || fechaCotizacion || '';
+    if (!fechaRef) return 'Sin fecha de reserva';
+    const b = getBloqueBCP(configMensual, compra.proveedor || 'Azabache', fechaRef);
+    return b
+      ? `📅 Reservado Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}`
+      : 'Sin bloque en grilla mensual';
+  };
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
-      {/* RESUMEN */}
+      {/* RESUMEN DETALLADO */}
       <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div className="card">
           <div className="card-header">
@@ -80,9 +127,9 @@ export default function StepResumenWizard({
                 <FileText size={18} />
               </div>
               <div>
-                <h3 className="card-title">Resumen de números</h3>
+                <h3 className="card-title">Resumen Completo: Proveedores, Pagos y Cliente</h3>
                 <span className="card-subtitle">
-                  Venta al cliente, costo real de compra y ganancia por servicio.
+                  Valores guardados por separado: Proveedor 1 (Aero), Proveedor 2 (Azabache PDF + Reservas) y Precio al Cliente.
                 </span>
               </div>
             </div>
@@ -111,6 +158,38 @@ export default function StepResumenWizard({
               </div>
             </div>
           </div>
+
+          {/* Tarjetas de separación por Proveedor */}
+          {desgloseProveedores.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+              {desgloseProveedores.map((prov) => (
+                <div
+                  key={prov.proveedorId}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'rgba(15, 23, 42, 0.7)',
+                    border: '1px solid rgba(139, 92, 246, 0.28)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', textTransform: 'uppercase', color: 'var(--neon-cyan)', fontWeight: 700 }}>
+                    <Building2 size={13} />
+                    <span>{prov.proveedor}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                    Cotizado en {prov.proveedor}:{' '}
+                    <strong className="mono" style={{ color: '#fff' }}>
+                      {formatoMoneda(moneda, prov.totalCotizadoReferencia)}
+                    </strong>
+                  </div>
+                  <div style={{ fontSize: '0.88rem', color: 'var(--neon-cyan)', marginTop: '3px' }}>
+                    A pagar realmente:{' '}
+                    <strong className="mono">{formatoMoneda(moneda, prov.totalAPagarCompra)}</strong>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {serviciosVentaCero.length > 0 && (
             <div
@@ -158,10 +237,14 @@ export default function StepResumenWizard({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {servicios.map((item) => {
                     const compra = ofertaCompraDe(item);
+                    const basePDF = ofertaBasePresupuestoDe(item);
                     const venta = precioVentaItem(item);
                     const costo = costoCompraItem(item);
+                    const costoBase = costoBasePresupuestoItem(item);
+                    const ahorro = ahorroArbitrajeItem(item);
                     const ganancia = gananciaItem(item);
                     const ofertas = item.ofertas || [];
+                    const resumenVenc = obtenerResumenVencimiento(item);
 
                     return (
                       <div
@@ -174,7 +257,7 @@ export default function StepResumenWizard({
                           opacity: item.activo ? 1 : 0.65
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                           <input
                             type="checkbox"
                             checked={item.activo}
@@ -182,42 +265,58 @@ export default function StepResumenWizard({
                             style={{ width: '17px', height: '17px', cursor: 'pointer' }}
                           />
 
-                          <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ flex: 1, minWidth: '200px' }}>
                             <div style={{ fontWeight: 600 }}>
                               {item.nombre || SECCION_LABEL[tipo] || 'Servicio'}
                             </div>
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                               {compra
-                                ? `Compra a ${compra.proveedor || 'sin proveedor'}`
+                                ? `Se paga a ${compra.proveedor || 'sin proveedor'}`
                                 : 'Sin oferta de compra'}
-                              {item.tipo === 'aereo' && item.estadoVuelo && item.estadoVuelo !== 'SinReservar'
-                                ? ` · ${item.estadoVuelo}`
-                                : ''}
+                              {item.tipo === 'aereo' && item.estadoVuelo
+                                ? ` · ${item.estadoVuelo === 'Emitido' ? 'Emitido (Confirmado)' : item.estadoVuelo}`
+                                : item.estadoReserva
+                                  ? ` · ${item.estadoReserva}`
+                                  : ''}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--neon-cyan)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <CalendarClock size={12} />
+                              <span>{resumenVenc}</span>
                             </div>
                             {ofertas.length > 1 && (
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                Ofertas:{' '}
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                                Valores guardados:{' '}
                                 {ofertas
                                   .map(
                                     (oferta) =>
-                                      `${oferta.proveedor || '—'} ${formatoMoneda(moneda, oferta.costo)}${oferta.id === compra?.id ? ' (compra)' : ''}`
+                                      `${oferta.proveedor || '—'} ${formatoMoneda(moneda, oferta.costo)}${
+                                        oferta.id === compra?.id ? ' (Compra Real)' : ''
+                                      }${oferta.id === basePDF?.id ? ' (Base PDF Cliente)' : ''}`
                                   )
                                   .join(' · ')}
+                                {ahorro > 0 ? ` · Ahorro Aero vs ${basePDF?.proveedor}: +${formatoMoneda(moneda, ahorro)}` : ''}
                               </div>
                             )}
                           </div>
 
                           <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Venta</div>
-                            <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                              {formatoMoneda(moneda, venta)}
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Base PDF</div>
+                            <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--neon-amber)' }}>
+                              {formatoMoneda(moneda, costoBase)}
                             </div>
                           </div>
 
                           <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Costo real</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Costo Real</div>
                             <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
                               {formatoMoneda(moneda, costo)}
+                            </div>
+                          </div>
+
+                          <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Precio Cliente</div>
+                            <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                              {formatoMoneda(moneda, venta)}
                             </div>
                           </div>
 
@@ -282,29 +381,45 @@ export default function StepResumenWizard({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(15, 9, 36, 0.7)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(139, 92, 246, 0.18)' }}>
               <span style={{ fontSize: '0.86rem', color: '#cbd5e1' }}>
-                Venta Total <span style={{ color: 'var(--text-muted)' }}>({activos.length})</span>
+                Precio Final al Cliente <span style={{ color: 'var(--text-muted)' }}>({activos.length})</span>
               </span>
               <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#ffffff', fontSize: '1rem' }}>
                 {formatoMoneda(moneda, totalVenta)}
               </span>
             </div>
 
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(15, 9, 36, 0.7)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(250, 204, 21, 0.25)' }}>
+              <span style={{ fontSize: '0.84rem', color: 'var(--neon-amber)' }}>Costo Base PDF (Azabache)</span>
+              <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--neon-amber)', fontSize: '0.96rem' }}>
+                {formatoMoneda(moneda, totalCostoBasePDF)}
+              </span>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(15, 9, 36, 0.7)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(139, 92, 246, 0.18)' }}>
-              <span style={{ fontSize: '0.86rem', color: '#cbd5e1' }}>Costo Real Compra</span>
+              <span style={{ fontSize: '0.86rem', color: '#cbd5e1' }}>Costo Real Compra (A pagar)</span>
               <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#cbd5e1', fontSize: '1rem' }}>
                 {formatoMoneda(moneda, totalCosto)}
               </span>
             </div>
 
+            {totalAhorroAero > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(16, 185, 129, 0.12)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--neon-emerald)' }}>Ahorro compra en Aero vs PDF</span>
+                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--neon-emerald)' }}>
+                  +{formatoMoneda(moneda, totalAhorroAero)}
+                </span>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(15, 9, 36, 0.4)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Venta / pasajero</span>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Precio Cliente / pasajero</span>
               <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--neon-cyan)' }}>
                 {formatoMoneda(moneda, totalVenta / paxCount)}
               </span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(15, 9, 36, 0.4)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Costo / pasajero</span>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Costo Real / pasajero</span>
               <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
                 {formatoMoneda(moneda, totalCosto / paxCount)}
               </span>
@@ -354,8 +469,8 @@ export default function StepResumenWizard({
           </div>
 
           <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', margin: '14px 0 0', lineHeight: 1.4 }}>
-            El presupuesto que recibe el cliente se genera con la herramienta del proveedor. Este
-            resumen es de control interno de la agencia.
+            El presupuesto que recibe el cliente se genera con el constructor de PDF de Azabache. Este
+            resumen guarda por separado los costos de Aero, Azabache y el precio final al cliente, impactando en tu Calendario de Pagos.
           </p>
         </div>
       </div>

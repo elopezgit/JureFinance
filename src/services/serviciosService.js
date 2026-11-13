@@ -139,7 +139,11 @@ export function nombreAereoDesdeTramos(tramos) {
  * `costo` es el neto total que cobra ese proveedor por el servicio completo
  * (todos los pasajeros), no por pax.
  */
-export function createEmptyOferta({ proveedorId = '', proveedor = '' } = {}) {
+export function createEmptyOferta({
+  proveedorId = '',
+  proveedor = '',
+  esBasePresupuesto = false
+} = {}) {
   const idProveedor = proveedorId || proveedorIdDe(proveedor);
   return {
     id: nuevoIdOferta(),
@@ -147,7 +151,8 @@ export function createEmptyOferta({ proveedorId = '', proveedor = '' } = {}) {
     proveedor: proveedor || nombreProveedorDe(idProveedor),
     costo: 0,
     vencimientoTTOO: '',
-    politicaReembolso: ''
+    politicaReembolso: '',
+    esBasePresupuesto: Boolean(esBasePresupuesto)
   };
 }
 
@@ -162,7 +167,8 @@ export function normalizarOferta(oferta, { itemId = '', indice = 0, tipo = 'extr
     proveedor: oferta.proveedor || nombreProveedorDe(idProveedor),
     costo: redondear(Number(oferta.costo ?? oferta.montoTotalNeto) || 0),
     vencimientoTTOO: oferta.vencimientoTTOO || '',
-    politicaReembolso: oferta.politicaReembolso ?? (POLITICA_DEFAULT[tipo] || '')
+    politicaReembolso: oferta.politicaReembolso ?? (POLITICA_DEFAULT[tipo] || ''),
+    esBasePresupuesto: Boolean(oferta.esBasePresupuesto)
   };
 }
 
@@ -185,14 +191,56 @@ export function ofertaCompraDe(item) {
   return ofertas[0];
 }
 
+/**
+ * Devuelve la oferta usada como base del presupuesto al cliente (el constructor
+ * de PDF, p. ej. Azabache). Si ninguna está marcada explícitamente y hay más de
+ * una oferta (caso típico del vuelo cotizado en Aero y también en Azabache),
+ * toma la oferta alternativa de mayor costo; si solo hay una, devuelve la de compra.
+ */
+export function ofertaBasePresupuestoDe(item) {
+  if (!item) return null;
+  const ofertas = Array.isArray(item.ofertas) ? item.ofertas : [];
+  if (ofertas.length === 0) return null;
+
+  const marcada = ofertas.find((o) => o.esBasePresupuesto);
+  if (marcada) return marcada;
+
+  if (ofertas.length > 1) {
+    const compra = ofertaCompraDe(item);
+    const alternativas = ofertas.filter((o) => o.id !== compra?.id && Number(o.costo) > 0);
+    if (alternativas.length > 0) {
+      return alternativas.reduce((max, o) =>
+        Number(o.costo) > Number(max.costo) ? o : max
+      );
+    }
+  }
+
+  return ofertaCompraDe(item);
+}
+
 /** Costo real del servicio (lo que paga la agencia al proveedor de compra). */
 export function costoCompraItem(item) {
   return redondear(Number(ofertaCompraDe(item)?.costo) || 0);
 }
 
+/** Costo del servicio en el proveedor constructor del PDF (ej. Azabache). */
+export function costoBasePresupuestoItem(item) {
+  return redondear(Number(ofertaBasePresupuestoDe(item)?.costo) || 0);
+}
+
+/** Ahorro por arbitraje entre el costo del proveedor constructor y el proveedor de compra. */
+export function ahorroArbitrajeItem(item) {
+  return redondear(Math.max(0, costoBasePresupuestoItem(item) - costoCompraItem(item)));
+}
+
 /** Proveedor con el que realmente se compra el servicio. */
 export function proveedorCompraItem(item) {
   return ofertaCompraDe(item)?.proveedor || '';
+}
+
+/** Proveedor usado como base del presupuesto al cliente (constructor PDF). */
+export function proveedorBasePresupuestoItem(item) {
+  return ofertaBasePresupuestoDe(item)?.proveedor || '';
 }
 
 /** Precio de venta al cliente del servicio. */
@@ -210,32 +258,69 @@ export function gananciaItem(item) {
 /* ------------------------------------------------------------------ */
 
 /** Crea un servicio vacío con una oferta inicial. */
-export function createEmptyItem(tipo, { proveedorId = '', proveedor = '' } = {}) {
+export function createEmptyItem(tipo, { proveedorId = '', proveedor = '', fechaReserva = '' } = {}) {
   const tipoFinal = TIPOS_SERVICIO.includes(tipo) ? tipo : 'extra';
-  const oferta = createEmptyOferta({ proveedorId, proveedor });
 
-  const base = {
+  // Para un aéreo nuevo, sugerimos por defecto las 2 ofertas del flujo real:
+  // 1) Proveedor 1 (Aero): costo real de compra del vuelo (pago a 24-48 hs de emitido)
+  // 2) Proveedor 2 (Azabache): costo del mismo vuelo en el constructor de PDF (referencia al cliente)
+  if (tipoFinal === TIPO_AEREO) {
+    const ofAero = createEmptyOferta({
+      proveedorId: 'aero',
+      proveedor: 'Aero',
+      esBasePresupuesto: false
+    });
+    const ofAzabache = createEmptyOferta({
+      proveedorId: 'azabache',
+      proveedor: 'Azabache',
+      esBasePresupuesto: true
+    });
+    return {
+      id: nuevoIdItem(tipoFinal),
+      tipo: tipoFinal,
+      activo: true,
+      nombre: NOMBRE_DEFAULT[tipoFinal] || '',
+      precioVenta: 0,
+      markupPct: 0,
+      detalles: '',
+      ofertas: [ofAero, ofAzabache],
+      ofertaCompraId: ofAero.id,
+      estadoVuelo: 'SinReservar',
+      fechaReserva: fechaReserva || '',
+      fechaEmision: '',
+      reglaVencimiento: '24-48hs',
+      plazoPagoHoras: 48,
+      tramos: []
+    };
+  }
+
+  // Para hotel, traslado, asistencia y extras: por defecto se reservan con el proveedor 2 (Azabache)
+  // y vencen según la grilla de bloques de Configuración Mensual (1-5 -> día 20, etc.)
+  const provIdTerrestre = proveedorId && proveedorId !== 'aero' ? proveedorId : 'azabache';
+  const provNombreTerrestre =
+    proveedor && proveedorIdDe(proveedor) !== 'aero'
+      ? proveedor
+      : nombreProveedorDe(provIdTerrestre);
+
+  const oferta = createEmptyOferta({
+    proveedorId: provIdTerrestre,
+    proveedor: provNombreTerrestre,
+    esBasePresupuesto: true
+  });
+
+  return {
     id: nuevoIdItem(tipoFinal),
     tipo: tipoFinal,
     activo: true,
     nombre: NOMBRE_DEFAULT[tipoFinal] || '',
     precioVenta: 0,
+    markupPct: 0,
     detalles: '',
     ofertas: [oferta],
-    ofertaCompraId: oferta.id
+    ofertaCompraId: oferta.id,
+    estadoReserva: 'Reservado',
+    fechaReserva: fechaReserva || ''
   };
-
-  if (tipoFinal === TIPO_AEREO) {
-    return {
-      ...base,
-      estadoVuelo: 'SinReservar',
-      fechaReserva: '',
-      fechaEmision: '',
-      tramos: []
-    };
-  }
-
-  return base;
 }
 
 /**
@@ -274,7 +359,8 @@ export function normalizarItem(item) {
           proveedor: item.proveedor,
           costo: item.montoTotalNeto,
           vencimientoTTOO: item.vencimientoTTOO,
-          politicaReembolso: item.politicaReembolso
+          politicaReembolso: item.politicaReembolso,
+          esBasePresupuesto: item.esBasePresupuesto
         },
         { itemId: id, indice: 0, tipo }
       )
@@ -295,6 +381,7 @@ export function normalizarItem(item) {
     activo: item.activo !== false,
     nombre: item.nombre ?? NOMBRE_DEFAULT[tipo] ?? '',
     precioVenta: redondear(Number(item.precioVenta) || 0),
+    markupPct: redondear(Number(item.markupPct) || 0),
     detalles: item.detalles || '',
     ofertas,
     ofertaCompraId,
@@ -314,17 +401,31 @@ export function normalizarItem(item) {
       ? item.tramos.map((tramo) => ({ ...createEmptyTramo(), ...tramo }))
       : [];
 
+    const plazoHoras = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
+    const reglaVencimiento =
+      item.reglaVencimiento === '24-48hs' || item.reglaVencimiento === 'bcp'
+        ? item.reglaVencimiento
+        : item.plazoPagoHoras
+          ? '24-48hs'
+          : undefined;
+
     return {
       ...base,
       nombre: base.nombre || nombreAereoDesdeTramos(tramos) || NOMBRE_DEFAULT.aereo,
       estadoVuelo: item.estadoVuelo || 'SinReservar',
       fechaReserva: item.fechaReserva || '',
       fechaEmision: item.fechaEmision || '',
+      ...(reglaVencimiento ? { reglaVencimiento } : {}),
+      plazoPagoHoras: plazoHoras,
       tramos
     };
   }
 
-  return base;
+  return {
+    ...base,
+    estadoReserva: item.estadoReserva || 'Reservado',
+    fechaReserva: item.fechaReserva || item.fechaEmision || ''
+  };
 }
 
 /**
@@ -420,6 +521,76 @@ export function totalCostoItems(items = []) {
   return redondear(
     serviciosActivos(items).reduce((acc, item) => acc + costoCompraItem(item), 0)
   );
+}
+
+/** Costo total en el proveedor constructor del PDF (ej. Azabache con el vuelo más caro). */
+export function totalCostoBasePresupuestoItems(items = []) {
+  return redondear(
+    serviciosActivos(items).reduce((acc, item) => acc + costoBasePresupuestoItem(item), 0)
+  );
+}
+
+/** Ahorro total logrado al comprar servicios en un proveedor más económico (ej. vuelo en Aero). */
+export function totalAhorroArbitrajeItems(items = []) {
+  return redondear(
+    serviciosActivos(items).reduce((acc, item) => acc + ahorroArbitrajeItem(item), 0)
+  );
+}
+
+/**
+ * Desglosa los importes por proveedor separando:
+ * - cuánto se cotizó en cada proveedor (incluyendo referencias de constructor PDF), y
+ * - cuánto se le debe pagar realmente a cada proveedor (ofertas marcadas como compra).
+ */
+export function desgloseCostosPorProveedor(items = []) {
+  const mapa = new Map();
+
+  serviciosActivos(items).forEach((item) => {
+    const compra = ofertaCompraDe(item);
+    const base = ofertaBasePresupuestoDe(item);
+
+    (item.ofertas || []).forEach((oferta) => {
+      const pid = proveedorIdDe(oferta.proveedorId || oferta.proveedor || 'sin-proveedor');
+      const nombre = oferta.proveedor || nombreProveedorDe(pid) || 'Sin proveedor';
+      if (!mapa.has(pid)) {
+        mapa.set(pid, {
+          proveedorId: pid,
+          proveedor: nombre,
+          totalCotizadoReferencia: 0,
+          totalAPagarCompra: 0,
+          cantidadCotizados: 0,
+          cantidadComprados: 0,
+          serviciosCompra: [],
+          serviciosReferencia: []
+        });
+      }
+      const entry = mapa.get(pid);
+      const costo = redondear(Number(oferta.costo) || 0);
+      entry.totalCotizadoReferencia = redondear(entry.totalCotizadoReferencia + costo);
+      entry.cantidadCotizados += 1;
+
+      if (compra && oferta.id === compra.id) {
+        entry.totalAPagarCompra = redondear(entry.totalAPagarCompra + costo);
+        entry.cantidadComprados += 1;
+        entry.serviciosCompra.push({
+          id: item.id,
+          tipo: item.tipo,
+          nombre: item.nombre || SECCION_LABEL[item.tipo] || item.tipo,
+          costo,
+          precioVenta: precioVentaItem(item)
+        });
+      } else if (base && oferta.id === base.id) {
+        entry.serviciosReferencia.push({
+          id: item.id,
+          tipo: item.tipo,
+          nombre: item.nombre || SECCION_LABEL[item.tipo] || item.tipo,
+          costo
+        });
+      }
+    });
+  });
+
+  return [...mapa.values()];
 }
 
 /** Precio de venta total al cliente. */

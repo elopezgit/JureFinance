@@ -444,20 +444,42 @@ export default function FlujoCajaBCP({
                                             </div>
                                           )}
                                         </td>
-                                        <td style={{ maxWidth: '260px' }}>
-                                          <div>{pago.concepto}</div>
+                                        <td style={{ maxWidth: '280px' }}>
+                                          <div style={{ fontWeight: 600 }}>{pago.concepto}</div>
                                           <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                                             {pago.destino || pago.seccionLabel}
-                                            {pago.origenVencimiento === 'manual'
-                                              ? ' · vencimiento manual'
-                                              : pago.origenVencimiento === 'bcp'
-                                                ? ' · calculado por BCP'
-                                                : ''}
+                                            {pago.origenVencimiento === '24-48hs'
+                                              ? ` · ⚡ Pago ${pago.plazoPagoHoras || 48} hs post-emisión`
+                                              : pago.origenVencimiento === 'manual'
+                                                ? ' · vencimiento manual'
+                                                : pago.origenVencimiento === 'bcp'
+                                                  ? ' · calculado por BCP'
+                                                  : ''}
                                           </div>
+                                          {(pago.precioVenta > 0 || (pago.ofertasDetalle && pago.ofertasDetalle.length > 1)) && (
+                                            <div style={{ fontSize: '0.71rem', color: 'var(--neon-cyan)', marginTop: '3px' }}>
+                                              {pago.costoBasePresupuesto > 0 && pago.costoBasePresupuesto !== pago.montoTotal && (
+                                                <span>
+                                                  Ref. PDF ({pago.proveedorBasePresupuesto || 'Azabache'}):{' '}
+                                                  {formatearMonto(pago.costoBasePresupuesto, pago.moneda)} ·{' '}
+                                                </span>
+                                              )}
+                                              {pago.precioVenta > 0 && (
+                                                <span>
+                                                  Cliente: {formatearMonto(pago.precioVenta, pago.moneda)}
+                                                </span>
+                                              )}
+                                            </div>
+                                          )}
                                         </td>
                                         <td>
                                           {pago.fechaEmision ? (
-                                            formatFechaLarga(pago.fechaEmision)
+                                            <div>
+                                              <div>{formatFechaLarga(pago.fechaEmision)}</div>
+                                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                                                {pago.seccion === 'aereo' ? 'Emitido confirmado' : 'Reservado'}
+                                              </div>
+                                            </div>
                                           ) : (
                                             <span className="badge badge-neutral">Sin emisión</span>
                                           )}
@@ -465,7 +487,13 @@ export default function FlujoCajaBCP({
                                         <td>
                                           {pago.rangoBCP ? (
                                             <span title={pago.rangoBCP}>
-                                              <span className="badge badge-info">
+                                              <span
+                                                className={`badge ${
+                                                  pago.origenVencimiento === '24-48hs'
+                                                    ? 'badge-warning'
+                                                    : 'badge-info'
+                                                }`}
+                                              >
                                                 {pago.rangoBCPCorto || pago.rangoBCP}
                                               </span>
                                             </span>

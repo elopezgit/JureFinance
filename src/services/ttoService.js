@@ -43,12 +43,37 @@ export function getConfigMesProveedor(configMensual, proveedorId, mes) {
 }
 
 /**
- * Calcula la fecha límite de pago de un servicio emitido en `fechaEmision`,
+ * Suma `dias` corridos a una fecha ISO ('YYYY-MM-DD') y devuelve la nueva fecha ISO.
+ * Se utiliza para calcular el vencimiento de vuelos emitidos (24 hs = +1 día, 48 hs = +2 días).
+ */
+export function sumarDiasISO(fechaISO, dias = 2) {
+  if (!fechaISO || !esFechaISOValida(fechaISO)) return '';
+  const [anio, mm, dd] = String(fechaISO).split('-').map(Number);
+  const d = new Date(anio, mm - 1, dd + Number(dias || 0));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate()
+  ).padStart(2, '0')}`;
+}
+
+/**
+ * Calcula la fecha límite de pago de un vuelo emitido/confirmado (24 a 48 hs posteriores).
+ * - 24 hs → +1 día corrido desde la fecha de emisión confirmada.
+ * - 48 hs → +2 días corridos desde la fecha de emisión confirmada.
+ */
+export function getFechaPagoAereoEmitido(fechaEmision, plazoHoras = 48) {
+  if (!fechaEmision) return '';
+  const horas = Number(plazoHoras) === 24 ? 24 : 48;
+  const dias = horas === 24 ? 1 : 2;
+  return sumarDiasISO(fechaEmision, dias);
+}
+
+/**
+ * Calcula la fecha límite de pago de un servicio reservado/emitido en `fechaBase`,
  * buscando el bloque del mes que contiene ese día para el proveedor indicado.
  * @returns {string} fecha ISO 'YYYY-MM-DD' o '' si no hay coincidencia.
  */
-export function getFechaPagoTTOO(configMensual, proveedorId, fechaEmision) {
-  const bloque = getBloqueBCP(configMensual, proveedorId, fechaEmision);
+export function getFechaPagoTTOO(configMensual, proveedorId, fechaBase) {
+  const bloque = getBloqueBCP(configMensual, proveedorId, fechaBase);
   return bloque?.fechaPago || '';
 }
 

@@ -5,11 +5,21 @@
 
 import {
   getFechaPagoTTOO,
+  getFechaPagoAereoEmitido,
   getBloqueBCP,
   getBloquesBCPPorVencimiento,
   getMesFromFecha
 } from './ttoService';
-import { normalizarServicios, SECCION_LABEL, TIPO_AEREO } from './serviciosService';
+import {
+  normalizarServicios,
+  SECCION_LABEL,
+  TIPO_AEREO,
+  costoBasePresupuestoItem,
+  proveedorBasePresupuestoItem,
+  ahorroArbitrajeItem,
+  precioVentaItem,
+  gananciaItem
+} from './serviciosService';
 
 // La etiqueta de sección vive en el modelo de servicios; se re-exporta para
 // no romper los imports existentes.
@@ -137,29 +147,80 @@ function basePago(overrides) {
  */
 function pagoDesdeItem(quote, item, configMensual) {
   const esAereo = item.tipo === TIPO_AEREO;
-  const bloqueBCP =
-    esAereo && item.fechaEmision
-      ? getBloqueBCP(configMensual, item.proveedor || 'Aero', item.fechaEmision)
-      : null;
+  const fechaOperacion = esAereo
+    ? item.fechaEmision || ''
+    : item.fechaReserva || item.fechaEmision || '';
 
   let fechaVencimiento = item.vencimientoTTOO || '';
   let origenVencimiento = fechaVencimiento ? 'manual' : '';
+  let bloqueBCP = null;
+  let rangoBCP = '';
+  let rangoBCPCorto = '';
 
-  // Para aéreos, si la oferta no trae vencimiento manual, manda el BCP.
   if (esAereo && !fechaVencimiento && item.fechaEmision) {
-    fechaVencimiento = getFechaPagoTTOO(
+    // Regla principal de Aero: el vuelo emitido (= confirmado desde JureTravel)
+    // se paga a las 24-48 hs posteriores a la emisión confirmada.
+    // Si explícitamente se configuró '24-48hs' (o si no hay grilla BCP para el proveedor),
+    // calcula fechaEmision + 24/48 hs.
+    const bloqueExistente = getBloqueBCP(
       configMensual,
       item.proveedor || 'Aero',
       item.fechaEmision
     );
-    origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
+    const usarRegla2448 =
+      item.reglaVencimiento === '24-48hs' ||
+      (item.reglaVencimiento !== 'bcp' && !bloqueExistente);
+
+    if (usarRegla2448) {
+      const horas = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
+      fechaVencimiento = getFechaPagoAereoEmitido(item.fechaEmision, horas);
+      origenVencimiento = fechaVencimiento ? '24-48hs' : 'sin-fecha';
+      rangoBCP = `Pago a ${horas} hs post-emisión confirmada`;
+      rangoBCPCorto = `${horas} hs post-emisión`;
+    } else if (bloqueExistente) {
+      bloqueBCP = bloqueExistente;
+      fechaVencimiento = getFechaPagoTTOO(
+        configMensual,
+        item.proveedor || 'Aero',
+        item.fechaEmision
+      );
+      origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
+      rangoBCP = bloqueBCP?.rangoLabel || '';
+      rangoBCPCorto = bloqueBCP?.rangoCorto || '';
+    }
+  } else if (!esAereo && !fechaVencimiento && fechaOperacion && item.estadoReserva !== 'SinReservar') {
+    // Regla principal de Proveedor 2 (Azabache / Price): hotel, traslado y demás
+    // servicios reservados se liquidan según la grilla de bloques de Configuración Mensual
+    // (p. ej. reservados del 1 al 5 del mes se pagan el día 20).
+    bloqueBCP = getBloqueBCP(
+      configMensual,
+      item.proveedor || 'Azabache',
+      fechaOperacion
+    );
+    if (bloqueBCP) {
+      fechaVencimiento = bloqueBCP.fechaPago || '';
+      origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
+      rangoBCP = bloqueBCP.rangoLabel
+        ? bloqueBCP.rangoLabel.replace(/^Emisiones/, 'Reservados')
+        : '';
+      rangoBCPCorto = bloqueBCP.rangoCorto || '';
+    } else {
+      origenVencimiento = 'sin-config';
+    }
   }
 
-  if (!fechaVencimiento) {
-    origenVencimiento = esAereo && item.fechaEmision ? 'sin-config' : 'sin-fecha';
+  if (!fechaVencimiento && !origenVencimiento) {
+    origenVencimiento = fechaOperacion ? 'sin-config' : 'sin-fecha';
   }
 
   const clavesAlias = item.claveLegacy ? [`${quote.id}::${item.claveLegacy}`] : [];
+  const ofertasDetalle = (item.ofertas || []).map((of) => ({
+    id: of.id,
+    proveedor: of.proveedor || '',
+    costo: Number(of.costo) || 0,
+    esCompra: of.id === item.ofertaCompraId,
+    esBasePresupuesto: Boolean(of.esBasePresupuesto)
+  }));
 
   return basePago({
     clave: `${quote.id}::${item.id}`,
@@ -176,15 +237,24 @@ function pagoDesdeItem(quote, item, configMensual) {
     seccionLabel: SECCION_LABEL[item.tipo] || item.tipo,
     proveedor: item.proveedor || '',
     concepto: item.nombre || SECCION_LABEL[item.tipo] || item.tipo,
-    fechaEmision: item.fechaEmision || '',
+    fechaEmision: fechaOperacion,
+    fechaReserva: item.fechaReserva || '',
     bloqueBCP,
-    rangoBCP: bloqueBCP?.rangoLabel || '',
-    rangoBCPCorto: bloqueBCP?.rangoCorto || '',
+    rangoBCP,
+    rangoBCPCorto,
+    plazoPagoHoras: esAereo ? Number(item.plazoPagoHoras) || 48 : undefined,
     moneda: quote.moneda || 'USD',
     montoTotal: Number(item.montoTotalNeto) || 0,
+    precioVenta: precioVentaItem(item),
+    costoBasePresupuesto: costoBasePresupuestoItem(item),
+    proveedorBasePresupuesto: proveedorBasePresupuestoItem(item),
+    ahorroArbitraje: ahorroArbitrajeItem(item),
+    gananciaServicio: gananciaItem(item),
+    ofertasDetalle,
     fechaVencimiento,
     origenVencimiento,
-    estadoVuelo: esAereo ? item.estadoVuelo || 'SinReservar' : undefined
+    estadoVuelo: esAereo ? item.estadoVuelo || 'SinReservar' : undefined,
+    estadoReserva: !esAereo ? item.estadoReserva || 'Reservado' : undefined
   });
 }
 

@@ -5,6 +5,9 @@ import {
   totalNetoItems,
   totalVentaItems,
   totalCostoItems,
+  totalCostoBasePresupuestoItems,
+  totalAhorroArbitrajeItems,
+  desgloseCostosPorProveedor,
   totalGananciaItems,
   margenVentaItems
 } from '../src/services/serviciosService.js';
@@ -427,6 +430,97 @@ check('CSV: incluye encabezado de rango BCP', csv.includes('Rango BCP'));
 check('CSV: incluye al cliente', csv.includes('Cliente BCP'));
 check('CSV: incluye los nombres de pasajeros', csv.includes('Ana Pérez'));
 check('CSV: incluye el costo de un ticket', csv.includes('1000'));
+
+// 12) Circuito JureTravel: Proveedor 1 (Aero 24-48 hs) + Proveedor 2 (Azabache PDF + Reservas 1-5 -> día 20).
+const cotizacionJureTravel = {
+  id: 'COT-JT-1',
+  cliente: 'Cliente JureTravel',
+  pax: 2,
+  moneda: 'USD',
+  fechaCotizacion: '2026-11-03',
+  servicios: {
+    items: [
+      {
+        id: 'srv-jt-vuelo',
+        tipo: 'aereo',
+        activo: true,
+        nombre: 'Vuelo TUC → CUN',
+        precioVenta: 2640, // 2200 base Azabache + 20%
+        markupPct: 20,
+        estadoVuelo: 'Emitido',
+        fechaEmision: '2026-11-03',
+        reglaVencimiento: '24-48hs',
+        plazoPagoHoras: 48,
+        ofertaCompraId: 'of-jt-aero',
+        ofertas: [
+          { id: 'of-jt-aero', proveedorId: 'aero', proveedor: 'Aero', costo: 1900, esBasePresupuesto: false },
+          { id: 'of-jt-aza-vuelo', proveedorId: 'azabache', proveedor: 'Azabache', costo: 2200, esBasePresupuesto: true }
+        ]
+      },
+      {
+        id: 'srv-jt-hotel',
+        tipo: 'hotel',
+        activo: true,
+        nombre: 'Hotel Riu Palace 7 noches',
+        precioVenta: 1800, // 1500 + 20%
+        markupPct: 20,
+        estadoReserva: 'Reservado',
+        fechaReserva: '2026-11-03', // Bloque 01-05 -> paga 20/11
+        ofertaCompraId: 'of-jt-aza-hotel',
+        ofertas: [
+          { id: 'of-jt-aza-hotel', proveedorId: 'azabache', proveedor: 'Azabache', costo: 1500, esBasePresupuesto: true }
+        ]
+      },
+      {
+        id: 'srv-jt-traslado',
+        tipo: 'traslados',
+        activo: true,
+        nombre: 'Traslado Aeropuerto / Hotel',
+        precioVenta: 120, // 100 + 20%
+        markupPct: 20,
+        estadoReserva: 'Reservado',
+        fechaReserva: '2026-11-04', // Bloque 01-05 -> paga 20/11
+        ofertaCompraId: 'of-jt-aza-tras',
+        ofertas: [
+          { id: 'of-jt-aza-tras', proveedorId: 'azabache', proveedor: 'Azabache', costo: 100, esBasePresupuesto: true }
+        ]
+      }
+    ]
+  }
+};
+
+const itemsJT = normalizarServicios(cotizacionJureTravel.servicios, { pax: 2 });
+check('JT: costo real de compra total = 3500 (1900 Aero + 1600 Azabache)', totalCostoItems(itemsJT) === 3500);
+check('JT: costo base PDF (Azabache) = 3800 (2200 + 1500 + 100)', totalCostoBasePresupuestoItems(itemsJT) === 3800);
+check('JT: ahorro compra en Aero vs Azabache = 300', totalAhorroArbitrajeItems(itemsJT) === 300);
+check('JT: precio final al cliente = 4560', totalVentaItems(itemsJT) === 4560);
+check('JT: ganancia neta real = 1060', totalGananciaItems(itemsJT) === 1060);
+
+const desgloseJT = desgloseCostosPorProveedor(itemsJT);
+const desgAero = desgloseJT.find((d) => d.proveedorId === 'aero');
+const desgAza = desgloseJT.find((d) => d.proveedorId === 'azabache');
+check('JT: Aero a pagar = 1900', desgAero?.totalAPagarCompra === 1900);
+check('JT: Azabache cotizado ref = 3800 y a pagar real = 1600', desgAza?.totalCotizadoReferencia === 3800 && desgAza?.totalAPagarCompra === 1600);
+
+const pagosJT = derivarPagosDesdeCotizaciones([cotizacionJureTravel], configNov);
+const pagoVueloJT = pagosJT.find((p) => p.seccion === 'aereo');
+const pagoHotelJT = pagosJT.find((p) => p.seccion === 'hotel');
+const pagoTrasJT = pagosJT.find((p) => p.seccion === 'traslados');
+check(
+  'JT: vuelo emitido el 03/11 con plazo 48 hs vence el 05/11',
+  pagoVueloJT?.fechaVencimiento === '2026-11-05' && pagoVueloJT?.origenVencimiento === '24-48hs',
+  `=> ${pagoVueloJT?.fechaVencimiento} (${pagoVueloJT?.origenVencimiento})`
+);
+check(
+  'JT: hotel reservado el 03/11 (bloque 01-05) vence el 20/11',
+  pagoHotelJT?.fechaVencimiento === '2026-11-20' && pagoHotelJT?.origenVencimiento === 'bcp',
+  `=> ${pagoHotelJT?.fechaVencimiento}`
+);
+check(
+  'JT: traslado reservado el 04/11 (bloque 01-05) vence el 20/11',
+  pagoTrasJT?.fechaVencimiento === '2026-11-20' && pagoTrasJT?.origenVencimiento === 'bcp',
+  `=> ${pagoTrasJT?.fechaVencimiento}`
+);
 
 console.log(fallas === 0 ? '\nTODO OK' : `\n${fallas} FALLAS`);
 process.exit(fallas === 0 ? 0 : 1);

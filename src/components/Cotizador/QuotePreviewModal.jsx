@@ -1,8 +1,10 @@
 // QuotePreviewModal.jsx - Resumen interno de números de la cotización.
 //
-// El presupuesto que recibe el cliente se arma fuera de la app con la
-// herramienta del proveedor. Este documento es de uso interno: muestra precio
-// de venta, costo real de compra y ganancia por servicio.
+// El presupuesto que recibe el cliente se arma fuera de la app con el constructor
+// de PDF del proveedor (ej. Azabache). Este documento es de uso interno de JureTravel:
+// muestra los costos guardados por separado de cada proveedor (Aero vs Azabache),
+// las fechas de pago (24-48 hs post-emisión vs Grilla 1-5 -> día 20), el precio final
+// al cliente y la ganancia real.
 import React from 'react';
 import {
   X,
@@ -23,13 +25,19 @@ import {
   SECCION_LABEL,
   precioVentaItem,
   costoCompraItem,
+  costoBasePresupuestoItem,
   gananciaItem,
   ofertaCompraDe,
+  ofertaBasePresupuestoDe,
+  desgloseCostosPorProveedor,
   totalVentaItems,
   totalCostoItems,
+  totalCostoBasePresupuestoItems,
   totalGananciaItems,
   margenVentaItems
 } from '../../services/serviciosService';
+import { getBloqueBCP, getFechaPagoAereoEmitido } from '../../services/ttoService';
+import { formatFechaLarga } from '../../services/calendarioService';
 
 const ESTILO_POR_TIPO = {
   aereo: { Icono: Plane, fondo: '#dbeafe', color: '#1d4ed8' },
@@ -45,7 +53,7 @@ const formato = (moneda, valor) =>
     maximumFractionDigits: 2
   })}`;
 
-export default function QuotePreviewModal({ quote, onClose }) {
+export default function QuotePreviewModal({ quote, configMensual = [], onClose }) {
   if (!quote) return null;
 
   const { destino, fechaViajeInicio, fechaViajeFin, fechaCotizacion, pax, pasajeros, moneda, notas } = quote;
@@ -55,18 +63,39 @@ export default function QuotePreviewModal({ quote, onClose }) {
   const items = normalizarServicios(quote.servicios, { pax }).filter((item) => item.activo);
   const totalVenta = totalVentaItems(items);
   const totalCosto = totalCostoItems(items);
+  const totalCostoBase = totalCostoBasePresupuestoItems(items);
   const ganancia = totalGananciaItems(items);
   const margen = margenVentaItems(items);
+  const desgloseProveedores = desgloseCostosPorProveedor(items);
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const obtenerVencimientoTexto = (item) => {
+    const compra = ofertaCompraDe(item);
+    if (!compra) return 'Sin proveedor';
+    if (compra.vencimientoTTOO) return `Pago ${formatFechaLarga(compra.vencimientoTTOO)} (manual)`;
+    if (item.tipo === 'aereo') {
+      if (!item.fechaEmision) return 'Pago a 24-48 hs post-emisión confirmada';
+      if (item.reglaVencimiento !== 'bcp') {
+        const horas = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
+        return `Pago ${horas} hs post-emisión: ${formatFechaLarga(getFechaPagoAereoEmitido(item.fechaEmision, horas))}`;
+      }
+      const b = getBloqueBCP(configMensual, compra.proveedor || 'Aero', item.fechaEmision);
+      return b ? `Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}` : 'Sin bloque';
+    }
+    const fRef = item.fechaReserva || fechaCotizacion || '';
+    if (!fRef) return 'Según grilla mensual (1-5 → día 20)';
+    const b = getBloqueBCP(configMensual, compra.proveedor || 'Azabache', fRef);
+    return b ? `Reservado Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}` : 'Según grilla mensual';
   };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal-content"
-        style={{ maxWidth: '900px', background: '#ffffff', color: '#111827' }}
+        style={{ maxWidth: '940px', background: '#ffffff', color: '#111827' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Barra superior del modal (oculta al imprimir) */}
@@ -88,10 +117,10 @@ export default function QuotePreviewModal({ quote, onClose }) {
             </div>
             <div>
               <h3 style={{ fontSize: '1.05rem', color: 'var(--text-main)', margin: 0 }}>
-                Resumen interno de números
+                Resumen interno de números (JureTravel)
               </h3>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Documento interno: no enviar al cliente
+                Documento interno: desglose de Proveedor 1 (Aero), Proveedor 2 (Azabache) y Cliente Final
               </span>
             </div>
           </div>
@@ -143,11 +172,11 @@ export default function QuotePreviewModal({ quote, onClose }) {
                     background: '#fef3c7'
                   }}
                 >
-                  Uso interno
+                  Uso interno JureTravel
                 </span>
               </div>
               <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: 0 }}>
-                Venta al cliente, costo real de compra y ganancia
+                Costos separados por Proveedor (Aero / Azabache), Calendario de Pagos y Precio Final al Cliente
               </p>
             </div>
 
@@ -168,7 +197,7 @@ export default function QuotePreviewModal({ quote, onClose }) {
               border: '1px solid #e2e8f0',
               borderRadius: '12px',
               padding: '20px 24px',
-              marginBottom: '28px',
+              marginBottom: '24px',
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
               gap: '16px'
@@ -219,6 +248,33 @@ export default function QuotePreviewModal({ quote, onClose }) {
             </div>
           </div>
 
+          {/* Resumen por proveedor */}
+          {desgloseProveedores.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+              {desgloseProveedores.map((p) => (
+                <div
+                  key={p.proveedorId}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1'
+                  }}
+                >
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: '#1e3a8a' }}>
+                    Proveedor: {p.proveedor}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '4px' }}>
+                    Cotizado en {p.proveedor}: <strong>{formato(moneda, p.totalCotizadoReferencia)}</strong>
+                  </div>
+                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 800 }}>
+                    A pagar realmente: {formato(moneda, p.totalAPagarCompra)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Detalle por servicio */}
           <div style={{ marginBottom: '28px' }}>
             <h4
@@ -231,7 +287,7 @@ export default function QuotePreviewModal({ quote, onClose }) {
                 marginBottom: '14px'
               }}
             >
-              Detalle por servicio
+              Detalle por servicio (Costos por Proveedor, Vencimientos y Precio al Cliente)
             </h4>
 
             {items.length === 0 && (
@@ -245,8 +301,10 @@ export default function QuotePreviewModal({ quote, onClose }) {
                 const estilo = ESTILO_POR_TIPO[item.tipo] || ESTILO_POR_TIPO.extra;
                 const { Icono } = estilo;
                 const compra = ofertaCompraDe(item);
+                const basePDF = ofertaBasePresupuestoDe(item);
                 const venta = precioVentaItem(item);
                 const costo = costoCompraItem(item);
+                const costoBase = costoBasePresupuestoItem(item);
                 const utilidad = gananciaItem(item);
 
                 return (
@@ -283,19 +341,40 @@ export default function QuotePreviewModal({ quote, onClose }) {
                         {item.nombre || SECCION_LABEL[item.tipo] || 'Servicio'}
                       </div>
                       <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                        {SECCION_LABEL[item.tipo] || item.tipo} · Compra a{' '}
-                        {compra?.proveedor || 'sin proveedor'}
+                        {SECCION_LABEL[item.tipo] || item.tipo} · Se compra a{' '}
+                        <strong>{compra?.proveedor || 'sin proveedor'}</strong> ·{' '}
+                        {obtenerVencimientoTexto(item)}
                       </div>
+                      {(item.ofertas || []).length > 1 && (
+                        <div style={{ fontSize: '0.72rem', color: '#475569', marginTop: '2px' }}>
+                          Valores por proveedor:{' '}
+                          {(item.ofertas || [])
+                            .map(
+                              (o) =>
+                                `${o.proveedor}: ${formato(moneda, o.costo)}${
+                                  o.id === compra?.id ? ' (Compra)' : ''
+                                }${o.id === basePDF?.id ? ' (Base PDF)' : ''}`
+                            )
+                            .join(' | ')}
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ textAlign: 'right', minWidth: '92px' }}>
-                      <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase' }}>Venta</div>
-                      <div style={{ fontWeight: 700, fontFamily: 'monospace' }}>{formato(moneda, venta)}</div>
+                      <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase' }}>Base PDF</div>
+                      <div style={{ fontWeight: 700, fontFamily: 'monospace', color: '#b45309' }}>
+                        {formato(moneda, costoBase)}
+                      </div>
                     </div>
 
                     <div style={{ textAlign: 'right', minWidth: '92px' }}>
                       <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase' }}>Costo real</div>
                       <div style={{ fontWeight: 700, fontFamily: 'monospace' }}>{formato(moneda, costo)}</div>
+                    </div>
+
+                    <div style={{ textAlign: 'right', minWidth: '92px' }}>
+                      <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase' }}>Cliente</div>
+                      <div style={{ fontWeight: 700, fontFamily: 'monospace' }}>{formato(moneda, venta)}</div>
                     </div>
 
                     <div style={{ textAlign: 'right', minWidth: '92px' }}>
@@ -332,21 +411,21 @@ export default function QuotePreviewModal({ quote, onClose }) {
           >
             <div>
               <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.85, fontWeight: 700 }}>
-                Venta total
+                Base PDF (Azabache)
               </div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif' }}>
-                {formato(moneda, totalVenta)}
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: '#fde68a' }}>
+                {formato(moneda, totalCostoBase)}
               </div>
               <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                {formato(moneda, totalVenta / paxCount)} por pax
+                {formato(moneda, totalCostoBase / paxCount)} por pax
               </div>
             </div>
 
             <div>
               <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.85, fontWeight: 700 }}>
-                Costo real
+                Costo real compra
               </div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif' }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif' }}>
                 {formato(moneda, totalCosto)}
               </div>
               <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
@@ -355,10 +434,22 @@ export default function QuotePreviewModal({ quote, onClose }) {
             </div>
 
             <div>
+              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.85, fontWeight: 700 }}>
+                Precio al cliente
+              </div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif' }}>
+                {formato(moneda, totalVenta)}
+              </div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                {formato(moneda, totalVenta / paxCount)} por pax
+              </div>
+            </div>
+
+            <div>
               <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.85, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <TrendingUp size={13} /> Ganancia real
               </div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: ganancia >= 0 ? '#6ee7b7' : '#fca5a5' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: ganancia >= 0 ? '#6ee7b7' : '#fca5a5' }}>
                 {formato(moneda, ganancia)}
               </div>
               <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
@@ -380,8 +471,8 @@ export default function QuotePreviewModal({ quote, onClose }) {
 
           <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '14px', fontSize: '0.72rem', color: '#64748b' }}>
             <p style={{ margin: 0 }}>
-              Documento de uso interno. El presupuesto que recibe el cliente se genera con la
-              herramienta del proveedor. Los importes son totales del viaje, expresados en{' '}
+              Documento de uso interno. El presupuesto que recibe el cliente se genera con el
+              constructor de PDF del proveedor (Azabache). Los importes son totales del viaje, expresados en{' '}
               {moneda || 'USD'}.
             </p>
           </div>

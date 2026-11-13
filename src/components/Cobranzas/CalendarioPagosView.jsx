@@ -700,10 +700,32 @@ export default function CalendarioPagosView({
     [pagosPeriodo, monedaCalendario, hoy]
   );
 
+  const diasConPagosDelMes = useMemo(() => {
+    const mapa = new Map();
+    pagosPeriodo
+      .filter((p) => p.fechaVencimiento && (p.moneda || 'USD') === monedaCalendario)
+      .forEach((p) => {
+        const prev = mapa.get(p.fechaVencimiento) || { fecha: p.fechaVencimiento, saldo: 0, total: 0, cantidad: 0 };
+        prev.saldo += Math.max(p.saldo, 0);
+        prev.total += Number(p.montoTotal) || 0;
+        prev.cantidad += 1;
+        mapa.set(p.fechaVencimiento, prev);
+      });
+    return [...mapa.values()].sort((a, b) => a.fecha.localeCompare(b.fecha));
+  }, [pagosPeriodo, monedaCalendario]);
+
+  const diaEfectivo = useMemo(() => {
+    const tieneEnSeleccionado = pagosPeriodo.some(
+      (p) => p.fechaVencimiento === diaSeleccionado && (p.moneda || 'USD') === monedaCalendario
+    );
+    if (tieneEnSeleccionado) return diaSeleccionado;
+    return diasConPagosDelMes[0]?.fecha || diaSeleccionado;
+  }, [pagosPeriodo, diaSeleccionado, monedaCalendario, diasConPagosDelMes]);
+
   const pagosDelDia = pagosPeriodo
     .filter(
       (p) =>
-        p.fechaVencimiento === diaSeleccionado &&
+        p.fechaVencimiento === diaEfectivo &&
         (p.moneda || 'USD') === monedaCalendario
     )
     .sort((a, b) => (a.proveedor || '').localeCompare(b.proveedor || ''));
@@ -844,95 +866,148 @@ export default function CalendarioPagosView({
       <div className="panel-inset" style={{ display: 'flex', gap: '12px', marginBottom: '18px' }}>
         <Info size={18} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
         <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-          Los pagos se generan <strong>automáticamente</strong> desde la oferta de compra de cada
-          cotización (costo real y vencimiento según la Configuración Mensual) y podés sumar{' '}
-          <strong>pagos manuales</strong>. Los servicios con costo 0 no generan obligación.
-          Registrá abonos <strong>parciales</strong> y el sistema lleva el saldo de cada obligación.
-          El reporte de flujo de caja agrupa por fecha de pago y permite exportar el detalle
-          auditable a CSV.
+          <strong>Mapa de Calendario de Pagos y Desglose:</strong> Los vuelos <strong>Emitidos (Confirmados)</strong> en{' '}
+          <strong>Aero</strong> vencen a las <strong>24–48 hs posteriores a la emisión</strong>. Los servicios{' '}
+          <strong>Reservados</strong> en <strong>Azabache / Price</strong> (hoteles, traslados, asistencias) vencen según
+          la <strong>grilla mensual de bloques</strong> (ej. reservados del 1 al 5 del mes se pagan el día 20). Hacé clic
+          en cualquier día del calendario para ver su desglose completo y registrar pagos totales o parciales.
         </p>
       </div>
 
-      {vistaActual === 'calendario' && (
-        <>
-      {/* Calendario + agenda del día */}
-      <div className="cal-layout" style={{ marginBottom: '18px' }}>
-        <div className="card">
-          <CalendarioMensual
-            mes={mes}
-            onCambiarMes={cambiarMes}
-            eventos={eventos}
-            diaSeleccionado={diaSeleccionado}
-            onSeleccionarDia={setDiaSeleccionado}
-            moneda={monedaCalendario}
-          />
-        </div>
-
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title-group">
-              <div className="card-icon">
-                <CalendarClock size={18} />
-              </div>
-              <div>
-                <h3 className="card-title">{formatFechaLarga(diaSeleccionado)}</h3>
-                <p className="card-subtitle">
-                  {pagosDelDia.length
-                    ? `${pagosDelDia.length} ${pagosDelDia.length === 1 ? 'pago' : 'pagos'} para este día`
-                    : 'Sin pagos para este día'}
-                </p>
-              </div>
-            </div>
+      {(vistaActual === 'liquidaciones' || vistaActual === 'calendario') && (
+        <div className="cal-layout" style={{ marginBottom: '18px' }}>
+          <div className="card">
+            <CalendarioMensual
+              mes={mes}
+              onCambiarMes={cambiarMes}
+              eventos={eventos}
+              diaSeleccionado={diaEfectivo}
+              onSeleccionarDia={setDiaSeleccionado}
+              moneda={monedaCalendario}
+            />
           </div>
 
-          {pagosDelDia.length === 0 ? (
-            <div className="empty-state" style={{ padding: '24px 12px' }}>
-              <div className="empty-state-icon">
-                <CalendarClock size={22} />
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title-group">
+                <div className="card-icon">
+                  <CalendarClock size={18} />
+                </div>
+                <div>
+                  <h3 className="card-title">Desglose del Día · {formatFechaLarga(diaEfectivo)}</h3>
+                  <p className="card-subtitle">
+                    {pagosDelDia.length
+                      ? `${pagosDelDia.length} ${pagosDelDia.length === 1 ? 'obligación a pagar' : 'obligaciones a pagar'} en esta fecha`
+                      : 'Sin pagos para este día'}
+                  </p>
+                </div>
               </div>
-              <h3>Día sin vencimientos</h3>
-              <p>Elegí otro día en el calendario para ver su agenda de pagos.</p>
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {pagosDelDia.map((p) => {
-                const etiqueta = etiquetaEstado(p, hoy);
-                return (
-                  <div key={p.clave} className="row-soft">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                      <strong style={{ fontSize: '0.88rem' }}>{p.proveedor || 'Proveedor'}</strong>
-                      <div style={{ textAlign: 'right' }}>
-                        <strong className="mono">{formatearMonto(Math.max(p.saldo, 0), p.moneda)}</strong>
-                        {(p.estado === 'Parcial' || p.estado === 'Pagado') && (
-                          <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                            de {formatearMonto(p.montoTotal, p.moneda)}
-                          </div>
-                        )}
+
+            {diasConPagosDelMes.length > 0 && (
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                {diasConPagosDelMes.map((d) => {
+                  const activo = d.fecha === diaEfectivo;
+                  return (
+                    <button
+                      key={d.fecha}
+                      type="button"
+                      className={activo ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+                      style={{ height: '28px', fontSize: '0.73rem', padding: '2px 9px' }}
+                      onClick={() => setDiaSeleccionado(d.fecha)}
+                    >
+                      {formatFechaLarga(d.fecha)} ({formatearMonto(d.saldo > 0 ? d.saldo : d.total, monedaCalendario)})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {pagosDelDia.length === 0 ? (
+              <div className="empty-state" style={{ padding: '24px 12px' }}>
+                <div className="empty-state-icon">
+                  <CalendarClock size={22} />
+                </div>
+                <h3>Día sin vencimientos</h3>
+                <p>Elegí otro día en el calendario para ver qué debés pagar y su desglose.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto' }}>
+                {pagosDelDia.map((p) => {
+                  const etiqueta = etiquetaEstado(p, hoy);
+                  return (
+                    <div key={p.clave} className="row-soft">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <strong style={{ fontSize: '0.9rem', color: 'var(--neon-cyan)' }}>
+                            {p.proveedor || 'Proveedor'}
+                          </strong>
+                          <span
+                            className={`badge ${
+                              p.origenVencimiento === '24-48hs' ? 'badge-warning' : 'badge-info'
+                            }`}
+                            style={{ fontSize: '0.68rem' }}
+                          >
+                            {p.origenVencimiento === '24-48hs'
+                              ? `⚡ ${p.plazoPagoHoras || 48} hs post-emisión`
+                              : p.rangoBCPCorto
+                                ? `📅 Bloque ${p.rangoBCPCorto}`
+                                : 'Vencimiento'}
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <strong className="mono">{formatearMonto(Math.max(p.saldo, 0), p.moneda)}</strong>
+                          {(p.estado === 'Parcial' || p.estado === 'Pagado') && (
+                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                              de {formatearMonto(p.montoTotal, p.moneda)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#e2e8f0', margin: '4px 0 2px', fontWeight: 600 }}>
+                        {p.concepto} · {p.cliente}
+                        {p.cotizacionId ? ` (${p.cotizacionId})` : ''}
+                      </div>
+                      {(p.costoBasePresupuesto > 0 || p.precioVenta > 0) && (
+                        <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                          Costo Compra ({p.proveedor}): <strong>{formatearMonto(p.montoTotal, p.moneda)}</strong>
+                          {p.costoBasePresupuesto > 0 && p.costoBasePresupuesto !== p.montoTotal && (
+                            <span>
+                              {' '}· Ref. PDF ({p.proveedorBasePresupuesto || 'Azabache'}):{' '}
+                              <strong style={{ color: 'var(--neon-amber)' }}>
+                                {formatearMonto(p.costoBasePresupuesto, p.moneda)}
+                              </strong>
+                            </span>
+                          )}
+                          {p.precioVenta > 0 && (
+                            <span>
+                              {' '}· Cliente: <strong>{formatearMonto(p.precioVenta, p.moneda)}</strong>
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className={`badge ${etiqueta.badge}`}>{etiqueta.texto}</span>
+                        <button
+                          className="btn btn-outline btn-sm"
+                          onClick={() => setPagoActivo(p)}
+                          disabled={Math.max(p.saldo, 0) <= 0}
+                        >
+                          <CreditCard size={13} />
+                          <span>Registrar pago</span>
+                        </button>
                       </div>
                     </div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 6px' }}>
-                      {p.concepto} · {p.cliente}
-                      {p.cotizacionId ? ` · ${p.cotizacionId}` : ''}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className={`badge ${etiqueta.badge}`}>{etiqueta.texto}</span>
-                      <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => setPagoActivo(p)}
-                        disabled={Math.max(p.saldo, 0) <= 0}
-                      >
-                        <CreditCard size={13} />
-                        <span>Registrar pago</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
+      {(vistaActual === 'calendario' || vistaActual === 'obligaciones') && (
+        <>
       {/* Listado con filtros */}
       <div className="card">
         <div className="card-header">

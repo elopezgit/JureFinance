@@ -385,6 +385,8 @@ export default function CotizadorWizard({
               destino,
               fechaViajeInicio,
               fechaViajeFin,
+              fechaCotizacion,
+              configMensual,
               pax: paxCount,
               moneda,
               items,
@@ -422,7 +424,11 @@ export default function CotizadorWizard({
       </div>
 
       {showPreviewModal && (
-        <QuotePreviewModal quote={quoteForPreview} onClose={() => setShowPreviewModal(false)} />
+        <QuotePreviewModal
+          quote={quoteForPreview}
+          configMensual={configMensual}
+          onClose={() => setShowPreviewModal(false)}
+        />
       )}
     </div>
   );
