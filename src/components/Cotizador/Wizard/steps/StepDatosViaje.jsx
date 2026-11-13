@@ -346,14 +346,12 @@ export default function StepDatosViaje({
                   borderRadius: 'var(--radius-lg)',
                   cursor: 'pointer',
                   background: activo
-                    ? 'linear-gradient(135deg, rgba(0, 245, 212, 0.12) 0%, rgba(139, 92, 246, 0.2) 100%)'
-                    : 'rgba(20, 13, 46, 0.75)',
+                    ? 'rgba(59, 130, 246, 0.1)'
+                    : 'var(--bg-subtle)',
                   border: activo
-                    ? '1.5px solid var(--neon-cyan)'
-                    : '1.5px solid var(--border)',
-                  boxShadow: activo
-                    ? '0 0 20px rgba(0, 245, 212, 0.25), inset 0 0 12px rgba(0, 245, 212, 0.08)'
-                    : 'none',
+                    ? '1px solid var(--primary)'
+                    : '1px solid var(--border)',
+                  boxShadow: 'none',
                   transition: 'all var(--transition-fast)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -364,21 +362,21 @@ export default function StepDatosViaje({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div
                       style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '6px',
-                        border: activo ? '2px solid var(--neon-cyan)' : '2px solid rgba(139, 92, 246, 0.4)',
-                        background: activo ? 'var(--neon-cyan)' : 'transparent',
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '5px',
+                        border: activo ? '1.5px solid var(--primary)' : '1.5px solid var(--border-strong)',
+                        background: activo ? 'var(--primary)' : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#0c071e',
+                        color: '#ffffff',
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      {activo && <CheckCircle2 size={16} strokeWidth={3} />}
+                      {activo && <CheckCircle2 size={14} strokeWidth={2.5} />}
                     </div>
-                    <span style={{ fontWeight: 800, fontSize: '1rem', color: activo ? '#ffffff' : 'var(--text-secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.96rem', color: activo ? '#ffffff' : 'var(--text-secondary)' }}>
                       {operador.nombre}
                     </span>
                   </div>
@@ -399,11 +397,11 @@ export default function StepDatosViaje({
                           alignItems: 'center',
                           gap: '5px',
                           fontSize: '0.72rem',
-                          fontWeight: 600,
-                          padding: '3px 8px',
+                          fontWeight: 500,
+                          padding: '2px 8px',
                           borderRadius: 'var(--radius-full)',
-                          background: 'rgba(10, 6, 26, 0.6)',
-                          border: '1px solid rgba(139, 92, 246, 0.25)',
+                          background: 'rgba(15, 23, 42, 0.65)',
+                          border: '1px solid var(--border)',
                           color: activo ? 'var(--neon-cyan)' : 'var(--text-secondary)'
                         }}
                       >

@@ -235,80 +235,79 @@ export default function CotizadorWizard({
   /* ------------------------------- Render ------------------------------------ */
   return (
     <div className="wizard-form-wrap">
-      <div className="card" style={{ padding: '18px 24px', background: 'linear-gradient(180deg, rgba(26, 17, 58, 0.95) 0%, rgba(18, 12, 42, 0.95) 100%)' }}>
+      <div className="card" style={{ padding: '16px 22px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span className="badge badge-success" style={{ gap: '6px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--neon-cyan)', boxShadow: '0 0 6px var(--neon-cyan)' }} />
+              <span className="badge badge-info" style={{ gap: '6px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--neon-cyan)' }} />
                 Cotizador Wizard
               </span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--neon-cyan)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+              <span style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
                 {quoteId}
               </span>
             </div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: '6px', letterSpacing: '-0.02em', color: '#ffffff' }}>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginTop: '5px', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
               {cliente ? `Cotización para ${cliente}` : 'Nueva Cotización'}
             </h2>
           </div>
 
-          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <div
               style={{
-                padding: '10px 16px',
+                padding: '9px 15px',
                 borderRadius: 'var(--radius-md)',
-                background: 'rgba(16, 10, 38, 0.7)',
-                border: '1px solid rgba(139, 92, 246, 0.25)',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border)',
                 textAlign: 'right',
-                minWidth: '120px'
+                minWidth: '125px'
               }}
             >
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', fontWeight: 700 }}>
+              <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', fontWeight: 600 }}>
                 <Receipt size={12} color="var(--neon-cyan)" /> Venta
               </div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#ffffff', marginTop: '2px' }}>
+              <div style={{ fontSize: '1.08rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-main)', marginTop: '2px' }}>
                 {formatoMoneda(moneda, totalVenta)}
               </div>
             </div>
 
             <div
               style={{
-                padding: '10px 16px',
+                padding: '9px 15px',
                 borderRadius: 'var(--radius-md)',
-                background: 'rgba(16, 10, 38, 0.7)',
-                border: '1px solid rgba(139, 92, 246, 0.25)',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border)',
                 textAlign: 'right',
-                minWidth: '120px'
+                minWidth: '125px'
               }}
             >
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', fontWeight: 700 }}>
+              <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', fontWeight: 600 }}>
                 <Wallet size={12} color="var(--primary-light)" /> Costo Real
               </div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#cbd5e1', marginTop: '2px' }}>
+              <div style={{ fontSize: '1.08rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', marginTop: '2px' }}>
                 {formatoMoneda(moneda, totalCosto)}
               </div>
             </div>
 
             <div
               style={{
-                padding: '10px 16px',
+                padding: '9px 15px',
                 borderRadius: 'var(--radius-md)',
-                background: gananciaRealTotal >= 0 ? 'rgba(0, 245, 212, 0.12)' : 'rgba(255, 42, 133, 0.12)',
-                border: `1.5px solid ${gananciaRealTotal >= 0 ? 'rgba(0, 245, 212, 0.45)' : 'rgba(255, 42, 133, 0.45)'}`,
-                boxShadow: `0 0 16px ${gananciaRealTotal >= 0 ? 'rgba(0, 245, 212, 0.25)' : 'rgba(255, 42, 133, 0.25)'}`,
+                background: gananciaRealTotal >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'var(--danger-bg)',
+                border: `1px solid ${gananciaRealTotal >= 0 ? 'rgba(16, 185, 129, 0.35)' : 'var(--danger-border)'}`,
                 textAlign: 'right',
                 minWidth: '130px'
               }}
             >
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: gananciaRealTotal >= 0 ? 'var(--neon-cyan)' : 'var(--neon-pink)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', fontWeight: 800 }}>
+              <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: gananciaRealTotal >= 0 ? '#34d399' : 'var(--neon-pink)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', fontWeight: 600 }}>
                 <TrendingUp size={12} /> Ganancia Neta
               </div>
               <div
                 style={{
-                  fontSize: '1.15rem',
-                  fontWeight: 800,
+                  fontSize: '1.08rem',
+                  fontWeight: 700,
                   fontFamily: 'var(--font-mono)',
-                  color: gananciaRealTotal >= 0 ? 'var(--neon-cyan)' : 'var(--neon-pink)',
+                  color: gananciaRealTotal >= 0 ? '#34d399' : 'var(--neon-pink)',
                   marginTop: '2px'
                 }}
               >

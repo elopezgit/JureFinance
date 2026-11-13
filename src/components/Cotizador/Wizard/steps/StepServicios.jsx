@@ -54,11 +54,11 @@ import { formatFechaLarga } from '../../../../services/calendarioService';
 const TIPOS_ORDEN = ['aereo', 'hotel', 'traslados', 'asistencia', 'extra'];
 
 const ESTILO_POR_TIPO = {
-  aereo: { Icono: Plane, label: 'Vuelo', color: 'var(--neon-cyan)', bg: 'rgba(0, 245, 212, 0.12)', border: 'rgba(0, 245, 212, 0.4)' },
-  hotel: { Icono: Hotel, label: 'Hotel', color: 'var(--neon-amber)', bg: 'rgba(250, 204, 21, 0.12)', border: 'rgba(250, 204, 21, 0.4)' },
-  traslados: { Icono: Car, label: 'Traslado', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.12)', border: 'rgba(192, 132, 252, 0.4)' },
-  asistencia: { Icono: ShieldCheck, label: 'Asistencia', color: 'var(--neon-emerald)', bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.4)' },
-  extra: { Icono: Sparkles, label: 'Extra', color: 'var(--neon-pink)', bg: 'rgba(255, 42, 133, 0.12)', border: 'rgba(255, 42, 133, 0.4)' }
+  aereo: { Icono: Plane, label: 'Vuelo', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.1)', border: 'rgba(56, 189, 248, 0.28)' },
+  hotel: { Icono: Hotel, label: 'Hotel', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.28)' },
+  traslados: { Icono: Car, label: 'Traslado', color: '#a78bfa', bg: 'rgba(167, 139, 250, 0.1)', border: 'rgba(167, 139, 250, 0.28)' },
+  asistencia: { Icono: ShieldCheck, label: 'Asistencia', color: '#34d399', bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.28)' },
+  extra: { Icono: Sparkles, label: 'Extra', color: '#fb7185', bg: 'rgba(244, 63, 94, 0.1)', border: 'rgba(244, 63, 94, 0.28)' }
 };
 
 const PLACEHOLDER_NOMBRE = {
@@ -406,7 +406,7 @@ export default function StepServicios({
         </div>
 
         {/* Botones de acción rápida para agregar servicios */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(139, 92, 246, 0.2)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
           {TIPOS_ORDEN.map((t) => {
             const est = ESTILO_POR_TIPO[t] || ESTILO_POR_TIPO.extra;
             const { Icono } = est;
@@ -419,10 +419,9 @@ export default function StepServicios({
                 style={{
                   background: est.bg,
                   color: est.color,
-                  border: `1.5px solid ${est.border}`,
-                  boxShadow: `0 0 10px ${est.bg}`,
+                  border: `1px solid ${est.border}`,
                   gap: '6px',
-                  fontWeight: 700
+                  fontWeight: 600
                 }}
               >
                 <Plus size={13} />
@@ -434,8 +433,27 @@ export default function StepServicios({
         </div>
       </div>
 
-      {/* Renderizado de categorías y sus servicios */}
-      {grupos.map(({ tipo, servicios }) => {
+      {/* Estado inicial limpio cuando aún no se agregaron servicios */}
+      {items.length === 0 && (
+        <div className="card" style={{ textAlign: 'center', padding: '36px 24px' }}>
+          <div className="empty-state-icon">
+            <Plane size={22} />
+          </div>
+          <h3 style={{ fontSize: '1.05rem', marginBottom: '6px' }}>Empezá a armar el presupuesto</h3>
+          <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', maxWidth: '520px', margin: '0 auto 16px' }}>
+            Podés cargar de una vez la estructura completa (Vuelo en Aero/Azabache + Hotel + Traslado) o agregar cada servicio con los botones de arriba.
+          </p>
+          <button type="button" className="btn btn-primary" onClick={cargarPlantillaPaquete}>
+            <Plus size={15} />
+            <span>Armar Paquete (Vuelo Aero/Azabache + Hotel + Traslado)</span>
+          </button>
+        </div>
+      )}
+
+      {/* Renderizado únicamente de las categorías que tienen servicios cargados */}
+      {grupos
+        .filter(({ servicios }) => servicios.length > 0)
+        .map(({ tipo, servicios }) => {
         const estilo = ESTILO_POR_TIPO[tipo] || ESTILO_POR_TIPO.extra;
         const { Icono } = estilo;
 

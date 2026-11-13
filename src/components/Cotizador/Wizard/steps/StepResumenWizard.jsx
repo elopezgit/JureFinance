@@ -365,62 +365,59 @@ export default function StepResumenWizard({
           className="card"
           style={{
             position: 'sticky',
-            top: '90px',
-            background: 'linear-gradient(180deg, rgba(28, 18, 62, 0.95) 0%, rgba(18, 11, 44, 0.95) 100%)',
-            borderColor: 'rgba(168, 85, 247, 0.35)',
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(139, 92, 246, 0.15)'
+            top: '90px'
           }}
         >
           <div className="card-header" style={{ marginBottom: '14px' }}>
-            <h3 className="card-title" style={{ fontSize: '1.1rem', color: '#ffffff' }}>
+            <h3 className="card-title" style={{ fontSize: '1.05rem', color: 'var(--text-main)' }}>
               Totales & Márgenes
             </h3>
             <span className="badge badge-info">{paxCount} PAX</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(15, 9, 36, 0.7)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(139, 92, 246, 0.18)' }}>
-              <span style={{ fontSize: '0.86rem', color: '#cbd5e1' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 14px', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
                 Precio Final al Cliente <span style={{ color: 'var(--text-muted)' }}>({activos.length})</span>
               </span>
-              <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#ffffff', fontSize: '1rem' }}>
+              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-main)', fontSize: '0.96rem' }}>
                 {formatoMoneda(moneda, totalVenta)}
               </span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(15, 9, 36, 0.7)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(250, 204, 21, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 14px', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
               <span style={{ fontSize: '0.84rem', color: 'var(--neon-amber)' }}>Costo Base PDF (Azabache)</span>
-              <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--neon-amber)', fontSize: '0.96rem' }}>
+              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--neon-amber)', fontSize: '0.94rem' }}>
                 {formatoMoneda(moneda, totalCostoBasePDF)}
               </span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(15, 9, 36, 0.7)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(139, 92, 246, 0.18)' }}>
-              <span style={{ fontSize: '0.86rem', color: '#cbd5e1' }}>Costo Real Compra (A pagar)</span>
-              <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#cbd5e1', fontSize: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 14px', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>Costo Real Compra (A pagar)</span>
+              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', fontSize: '0.96rem' }}>
                 {formatoMoneda(moneda, totalCosto)}
               </span>
             </div>
 
             {totalAhorroAero > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(16, 185, 129, 0.12)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--neon-emerald)' }}>Ahorro compra en Aero vs PDF</span>
-                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--neon-emerald)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.28)' }}>
+                <span style={{ fontSize: '0.8rem', color: '#34d399' }}>Ahorro compra en Aero vs PDF</span>
+                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#34d399' }}>
                   +{formatoMoneda(moneda, totalAhorroAero)}
                 </span>
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(15, 9, 36, 0.4)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Precio Cliente / pasajero</span>
-              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--neon-cyan)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: 'var(--radius-md)' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Precio Cliente / pasajero</span>
+              <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--neon-cyan)' }}>
                 {formatoMoneda(moneda, totalVenta / paxCount)}
               </span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(15, 9, 36, 0.4)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Costo Real / pasajero</span>
-              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: 'var(--radius-md)' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Costo Real / pasajero</span>
+              <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
                 {formatoMoneda(moneda, totalCosto / paxCount)}
               </span>
             </div>
@@ -429,31 +426,29 @@ export default function StepResumenWizard({
           <div
             style={{
               padding: '14px 16px',
-              background: gananciaRealTotal >= 0 ? 'rgba(0, 245, 212, 0.14)' : 'rgba(255, 42, 133, 0.14)',
-              border: `1.5px solid ${gananciaRealTotal >= 0 ? 'rgba(0, 245, 212, 0.45)' : 'rgba(255, 42, 133, 0.45)'}`,
-              boxShadow: `0 0 16px ${gananciaRealTotal >= 0 ? 'rgba(0, 245, 212, 0.2)' : 'rgba(255, 42, 133, 0.2)'}`,
+              background: gananciaRealTotal >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'var(--danger-bg)',
+              border: `1px solid ${gananciaRealTotal >= 0 ? 'rgba(16, 185, 129, 0.35)' : 'var(--danger-border)'}`,
               borderRadius: 'var(--radius-md)',
-              marginBottom: '18px'
+              marginBottom: '16px'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span style={{ fontWeight: 800, fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: '6px', color: gananciaRealTotal >= 0 ? 'var(--neon-cyan)' : 'var(--neon-pink)' }}>
-                <TrendingUp size={16} /> Ganancia Real Neta
+              <span style={{ fontWeight: 700, fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', color: gananciaRealTotal >= 0 ? '#34d399' : 'var(--neon-pink)' }}>
+                <TrendingUp size={15} /> Ganancia Real Neta
               </span>
               <span
                 style={{
-                  fontWeight: 800,
-                  fontSize: '1.2rem',
+                  fontWeight: 700,
+                  fontSize: '1.15rem',
                   fontFamily: 'var(--font-mono)',
-                  color: gananciaRealTotal >= 0 ? 'var(--neon-cyan)' : 'var(--neon-pink)',
-                  textShadow: `0 0 10px ${gananciaRealTotal >= 0 ? 'rgba(0, 245, 212, 0.5)' : 'rgba(255, 42, 133, 0.5)'}`
+                  color: gananciaRealTotal >= 0 ? '#34d399' : 'var(--neon-pink)'
                 }}
               >
                 {formatoMoneda(moneda, gananciaRealTotal)}
               </span>
             </div>
-            <div style={{ fontSize: '0.8rem', color: '#cbd5e1', fontWeight: 600 }}>
-              Margen sobre venta: <strong style={{ color: '#ffffff' }}>{formatoPct(margenRealPct)}</strong>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              Margen sobre venta: <strong style={{ color: 'var(--text-main)' }}>{formatoPct(margenRealPct)}</strong>
             </div>
           </div>
 
