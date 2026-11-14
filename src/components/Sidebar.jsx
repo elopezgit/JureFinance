@@ -134,7 +134,7 @@ export default function Sidebar({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <HardDrive size={13} style={{ color: isConnected ? 'var(--neon-cyan)' : 'var(--warning)' }} />
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#ffffff' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>
                   {isConnected ? 'Google Drive conectado' : 'Drive sin conexión'}
                 </span>
               </div>

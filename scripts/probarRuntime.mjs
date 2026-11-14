@@ -176,7 +176,27 @@ let chrome = null
 try {
   devServer = await asegurarDevServer()
 
-  rmSync(PERFIL, { recursive: true, force: true })
+  // Si quedó una instancia headless previa en el puerto de depuración, cerrarla limpiamente
+  try {
+    const vRes = await fetch(`http://127.0.0.1:${PUERTO_CDP}/json/version`, { signal: AbortSignal.timeout(800) })
+    if (vRes.ok) {
+      const info = await vRes.json()
+      if (info.webSocketDebuggerUrl) {
+        const wsPrev = new WebSocket(info.webSocketDebuggerUrl)
+        await new Promise((resolve) => {
+          wsPrev.addEventListener('open', () => {
+            wsPrev.send(JSON.stringify({ id: 1, method: 'Browser.close' }))
+            setTimeout(resolve, 600)
+          }, { once: true })
+          wsPrev.addEventListener('error', resolve, { once: true })
+        })
+      }
+    }
+  } catch {}
+
+  try {
+    rmSync(PERFIL, { recursive: true, force: true })
+  } catch {}
   chrome = spawn(CHROME, [
     '--headless=new',
     '--disable-gpu',
@@ -306,7 +326,27 @@ try {
   if (chrome) chrome.kill()
   await dormir(1200)
   try {
+    // Si quedó una instancia headless previa en el puerto de depuración, cerrarla limpiamente
+  try {
+    const vRes = await fetch(`http://127.0.0.1:${PUERTO_CDP}/json/version`, { signal: AbortSignal.timeout(800) })
+    if (vRes.ok) {
+      const info = await vRes.json()
+      if (info.webSocketDebuggerUrl) {
+        const wsPrev = new WebSocket(info.webSocketDebuggerUrl)
+        await new Promise((resolve) => {
+          wsPrev.addEventListener('open', () => {
+            wsPrev.send(JSON.stringify({ id: 1, method: 'Browser.close' }))
+            setTimeout(resolve, 600)
+          }, { once: true })
+          wsPrev.addEventListener('error', resolve, { once: true })
+        })
+      }
+    }
+  } catch {}
+
+  try {
     rmSync(PERFIL, { recursive: true, force: true })
+  } catch {}
   } catch {
     // Windows puede mantener el perfil bloqueado unos segundos; no afecta la prueba.
   }

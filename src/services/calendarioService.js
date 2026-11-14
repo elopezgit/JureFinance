@@ -158,18 +158,14 @@ function pagoDesdeItem(quote, item, configMensual) {
   let rangoBCPCorto = '';
 
   if (esAereo && !fechaVencimiento && item.fechaEmision) {
-    // Regla principal de Aero: el vuelo emitido (= confirmado desde JureTravel)
-    // se paga a las 24-48 hs posteriores a la emisión confirmada.
-    // Si explícitamente se configuró '24-48hs' (o si no hay grilla BCP para el proveedor),
-    // calcula fechaEmision + 24/48 hs.
-    const bloqueExistente = getBloqueBCP(
-      configMensual,
-      item.proveedor || 'Aero',
-      item.fechaEmision
-    );
-    const usarRegla2448 =
-      item.reglaVencimiento === '24-48hs' ||
-      (item.reglaVencimiento !== 'bcp' && !bloqueExistente);
+    // Regla principal de Aero (Cuenta Corriente - Renovación Bimestral cada 2 meses):
+    // Las emisiones se liquidan según los umbrales semanales del mes:
+    //   · 01 al 07 → día 13 (Nov) / 14 (Dic)
+    //   · 08 al 15 → día 19 (Nov) / 21 (Dic)
+    //   · 16 al 22 → día 27 (Nov) / 30 (Dic)
+    //   · 23 al 30/31 → día 04 Dic / 07 Ene
+    // Si explícitamente se eligió '24-48hs' (p. ej. sin cuenta corriente), usa +24/48 hs.
+    const usarRegla2448 = item.reglaVencimiento === '24-48hs';
 
     if (usarRegla2448) {
       const horas = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
@@ -177,35 +173,50 @@ function pagoDesdeItem(quote, item, configMensual) {
       origenVencimiento = fechaVencimiento ? '24-48hs' : 'sin-fecha';
       rangoBCP = `Pago a ${horas} hs post-emisión confirmada`;
       rangoBCPCorto = `${horas} hs post-emisión`;
-    } else if (bloqueExistente) {
-      bloqueBCP = bloqueExistente;
-      fechaVencimiento = getFechaPagoTTOO(
+    } else {
+      bloqueBCP = getBloqueBCP(
         configMensual,
         item.proveedor || 'Aero',
         item.fechaEmision
       );
-      origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
-      rangoBCP = bloqueBCP?.rangoLabel || '';
-      rangoBCPCorto = bloqueBCP?.rangoCorto || '';
+      if (bloqueBCP) {
+        fechaVencimiento = getFechaPagoTTOO(
+          configMensual,
+          item.proveedor || 'Aero',
+          item.fechaEmision
+        );
+        origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
+        rangoBCP = bloqueBCP?.rangoLabel || '';
+        rangoBCPCorto = bloqueBCP?.rangoCorto || '';
+      } else {
+        origenVencimiento = 'sin-config';
+      }
     }
   } else if (!esAereo && !fechaVencimiento && fechaOperacion && item.estadoReserva !== 'SinReservar') {
-    // Regla principal de Proveedor 2 (Azabache / Price): hotel, traslado y demás
-    // servicios reservados se liquidan según la grilla de bloques de Configuración Mensual
-    // (p. ej. reservados del 1 al 5 del mes se pagan el día 20).
-    bloqueBCP = getBloqueBCP(
-      configMensual,
-      item.proveedor || 'Azabache',
-      fechaOperacion
-    );
-    if (bloqueBCP) {
-      fechaVencimiento = bloqueBCP.fechaPago || '';
-      origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
-      rangoBCP = bloqueBCP.rangoLabel
-        ? bloqueBCP.rangoLabel.replace(/^Emisiones/, 'Reservados')
-        : '';
-      rangoBCPCorto = bloqueBCP.rangoCorto || '';
+    // Servicios reservados en Proveedor 2 (Azabache / Price: hotel, traslado, asistencia):
+    // Pueden liquidarse a 24-48 hs de reserva confirmada o según la grilla de umbrales del proveedor.
+    if (item.reglaVencimiento === '24-48hs') {
+      const horas = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
+      fechaVencimiento = getFechaPagoAereoEmitido(fechaOperacion, horas);
+      origenVencimiento = fechaVencimiento ? '24-48hs' : 'sin-fecha';
+      rangoBCP = `Pago a ${horas} hs post-reserva confirmada`;
+      rangoBCPCorto = `${horas} hs reserva`;
     } else {
-      origenVencimiento = 'sin-config';
+      bloqueBCP = getBloqueBCP(
+        configMensual,
+        item.proveedor || 'Azabache',
+        fechaOperacion
+      );
+      if (bloqueBCP) {
+        fechaVencimiento = bloqueBCP.fechaPago || '';
+        origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
+        rangoBCP = bloqueBCP.rangoLabel
+          ? bloqueBCP.rangoLabel.replace(/^Emisiones/, 'Reservados')
+          : '';
+        rangoBCPCorto = bloqueBCP.rangoCorto || '';
+      } else {
+        origenVencimiento = 'sin-config';
+      }
     }
   }
 

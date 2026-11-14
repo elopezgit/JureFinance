@@ -270,14 +270,26 @@ export default function StepDatosViaje({
           <span className="badge badge-info">{paxCount} PAX</span>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '14px'
-          }}
-        >
-          {Array.from({ length: paxCount }, (_, indice) => (
+        <details open={paxCount > 1} style={{ marginTop: '4px' }}>
+          <summary
+            style={{
+              cursor: 'pointer',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              marginBottom: '12px',
+              listStyle: 'none'
+            }}
+          >
+            {paxCount > 1 ? 'Ocultar / mostrar nombres de pasajeros' : 'Cargar nombres de pasajeros (opcional)'}
+          </summary>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '14px'
+            }}
+          >
+            {Array.from({ length: paxCount }, (_, indice) => (
             <div className="form-group" key={indice}>
               <label className="form-label">
                 <Users size={14} />
@@ -303,6 +315,7 @@ export default function StepDatosViaje({
           Si no completás los nombres, el reporte de flujo de caja usa el cliente titular y la
           cantidad de PAX. Los nombres cargados quedan guardados en la cotización.
         </p>
+        </details>
       </div>
 
       {/* Proveedores con los que trabajo */}

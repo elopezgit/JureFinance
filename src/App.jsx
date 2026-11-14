@@ -28,10 +28,10 @@ import {
 } from './services/driveService';
 import { construirAgendaPagos, hoyISO } from './services/calendarioService';
 import { normalizarServicios } from './services/serviciosService';
-import { getMesActual } from './services/ttoService';
+import { getMesActual, getBimestreDeMes } from './services/ttoService';
 
-const STORAGE_KEY_QUOTES = 'jurefinance_quotes_v1';
-const STORAGE_KEY_OPERADORES = 'jurefinance_operadores_v1';
+const STORAGE_KEY_QUOTES = 'jurefinance_quotes_v2';
+const STORAGE_KEY_OPERADORES = 'jurefinance_operadores_v2';
 
 // Cotización en blanco: el cotizador debe nacer vacío (sin datos de ejemplo)
 // Los servicios se modelan como LÍNEAS por proveedor (ver serviciosService).
@@ -66,6 +66,26 @@ function buildEmptyQuote() {
 export default function App() {
   const [activeTab, setActiveTab] = useState('cotizador');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Tema visual: claro por defecto, con opción manual persistida
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem('jurefinance_theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch (e) {
+      console.error('Error loading theme', e);
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('jurefinance_theme', theme);
+    } catch (e) {
+      console.error('Error saving theme', e);
+    }
+  }, [theme]);
 
   // Quotes state with persistence
   const [cotizaciones, setCotizaciones] = useState(() => {
@@ -285,10 +305,11 @@ export default function App() {
     const faltantes = contarDemoFaltantes(cotizaciones);
     const cotizacionesActualizadas = mergeDemoVuelos(cotizaciones);
 
-    // Asegurar la Configuración Mensual del mes en curso (para que las fechas de
-    // pago de los vuelos de ejemplo se calculen a partir de la emisión).
+    // Asegurar la Configuración Bimestral del bimestre en curso (para que las fechas de
+    // pago de los vuelos de ejemplo se calculen según los umbrales de Aero).
     const mesActual = getMesActual();
-    const faltanConfig = buildConfiguracionMensual([mesActual]).filter(
+    const mesesBimestre = getBimestreDeMes(mesActual);
+    const faltanConfig = buildConfiguracionMensual(['2026-11', '2026-12', ...mesesBimestre]).filter(
       (cfg) =>
         !(configMensual || []).some(
           (c) =>
@@ -421,6 +442,8 @@ export default function App() {
           urgentesCount={urgentesCount}
           onSyncDrive={() => performDriveSync(false)}
           isSyncingDrive={isSyncingDrive}
+          theme={theme}
+          onToggleTheme={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
         />
 
         {/* Notificación de cambios detectados en Google Drive */}

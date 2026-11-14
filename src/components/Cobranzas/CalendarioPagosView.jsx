@@ -964,7 +964,7 @@ export default function CalendarioPagosView({
                           )}
                         </div>
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#e2e8f0', margin: '4px 0 2px', fontWeight: 600 }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0 2px', fontWeight: 600 }}>
                         {p.concepto} · {p.cliente}
                         {p.cotizacionId ? ` (${p.cotizacionId})` : ''}
                       </div>

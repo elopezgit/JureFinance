@@ -95,25 +95,32 @@ export default function StepResumenWizard({
     }
     if (item.tipo === 'aereo') {
       if (!item.fechaEmision) {
-        return 'Vuelo: paga a 24-48 hs al confirmar emisión';
+        return 'Vuelo: vence según umbral bimestral de Aero al confirmar emisión';
       }
-      if (item.reglaVencimiento !== 'bcp') {
+      if (item.reglaVencimiento === '24-48hs') {
         const horas = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
         const f = getFechaPagoAereoEmitido(item.fechaEmision, horas);
         return `⚡ Pago en ${horas} hs post-emisión: ${formatFechaLarga(f)}`;
       }
       const b = getBloqueBCP(configMensual, compra.proveedor || 'Aero', item.fechaEmision);
-      return b ? `📅 Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}` : 'Sin bloque configurado';
+      return b
+        ? `📅 Umbral Aero ${b.rangoCorto} → Vence ${formatFechaLarga(b.fechaPago)}`
+        : 'Sin umbral configurado';
     }
     if (item.estadoReserva === 'SinReservar') {
       return 'Sin reservar aún';
     }
     const fechaRef = item.fechaReserva || fechaCotizacion || '';
     if (!fechaRef) return 'Sin fecha de reserva';
+    if (item.reglaVencimiento === '24-48hs') {
+      const horas = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
+      const f = getFechaPagoAereoEmitido(fechaRef, horas);
+      return `⚡ Pago en ${horas} hs post-reserva: ${formatFechaLarga(f)}`;
+    }
     const b = getBloqueBCP(configMensual, compra.proveedor || 'Azabache', fechaRef);
     return b
-      ? `📅 Reservado Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}`
-      : 'Sin bloque en grilla mensual';
+      ? `📅 Umbral ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}`
+      : 'Sin umbral configurado';
   };
 
   return (

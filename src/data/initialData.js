@@ -7,8 +7,8 @@ export const INITIAL_OPERADORES = [
     nombre: 'Aero',
     categoria: 'Aéreos',
     prestaciones: ['Aéreos'],
-    descripcion: 'Operador especializado exclusivamente en pasajes aéreos regulares y charters. Emite tarifas netas por el total de pasajeros.',
-    tiempoEsperaPromedio: '24 a 48 hs antes de emisión',
+    descripcion: 'Operador mayorista de pasajes aéreos (#TurismoConfiable). Liquida emisiones en cuenta corriente según tabla de umbrales semanales que se renueva cada 2 meses (bimestral).',
+    tiempoEsperaPromedio: 'Por umbrales de emisión (01-07, 08-15, 16-22, 23 al fin de mes · renovación cada 2 meses)',
     contacto: 'operaciones@aero.tur.ar',
     badgeColor: 'badge-info'
   },
@@ -18,7 +18,7 @@ export const INITIAL_OPERADORES = [
     categoria: 'Multiservicio',
     prestaciones: ['Hotel', 'Traslados', 'Asistencia al Viajero'],
     descripcion: 'Operador mayorista para reservas hoteleras, traslados privados/regulares y seguros de asistencia.',
-    tiempoEsperaPromedio: 'Hasta 15 días antes del check-in o fecha de pago estipulada',
+    tiempoEsperaPromedio: 'Según fecha límite de pago de reserva o grilla configurada',
     contacto: 'reservas@price.com',
     badgeColor: 'badge-warning'
   },
@@ -27,8 +27,8 @@ export const INITIAL_OPERADORES = [
     nombre: 'Azabache',
     categoria: 'Multiservicio',
     prestaciones: ['Hotel', 'Traslados', 'Asistencia al Viajero'],
-    descripcion: 'Consolidador mayorista con cupos confirmados y tarifas especiales en cadenas all-inclusive y destinos del Caribe y Sudamérica.',
-    tiempoEsperaPromedio: 'Hasta fecha límite de prepago indicada en el voucher',
+    descripcion: 'Consolidador mayorista y constructor de presupuestos PDF para el cliente final (vuelo de referencia + hotel + traslados confirmados).',
+    tiempoEsperaPromedio: 'Según fecha de reserva confirmada o vencimiento del voucher',
     contacto: 'grupos@azabache.com',
     badgeColor: 'badge-success'
   }
@@ -305,33 +305,61 @@ export const INITIAL_CLIENT_DRIVE_FILES = {
 };
 
 // ============================================================
-// Configuración Mensual de TTOs
-// Cada proveedor define, a principio de mes, los bloques de fechas
-// de emisión y su fecha límite de pago asociada. Se cargan a mano.
+// Configuración Bimestral / Mensual de TTOs (Umbrales de Emisión Aero)
+// Aero define cada 2 meses (bimestralmente) los 4 bloques de fechas
+// de emisión y su fecha de vencimiento de pago para clientes con cuenta corriente:
+//   · Noviembre:
+//       01 al 07 Noviembre → 13 Noviembre
+//       08 al 15 Noviembre → 19 Noviembre
+//       16 al 22 Noviembre → 27 Noviembre
+//       23 al 30 Noviembre → 04 Diciembre
+//   · Diciembre:
+//       01 al 07 Diciembre → 14 Diciembre
+//       08 al 15 Diciembre → 21 Diciembre
+//       16 al 22 Diciembre → 30 Diciembre
+//       23 al 31 Diciembre → 07 Enero
 // Estructura: [{ mes: 'YYYY-MM', proveedorId, bloques: [{ desde, hasta, fechaPago }] }]
 // ============================================================
 /**
- * Plantilla de bloques de un mes: rango de días de emisión → fecha límite de pago.
- * Los bloques cuyo pago cae al mes siguiente usan el mes siguiente.
+ * Plantilla oficial de umbrales de Aero para un mes ('YYYY-MM').
+ * Se renueva cada 2 meses (bimestral):
+ * - Mes 1 del bimestre (impar, ej. Noviembre):
+ *     01-07 → día 13 | 08-15 → día 19 | 16-22 → día 27 | 23-fin → día 04 mes sig.
+ * - Mes 2 del bimestre (par, ej. Diciembre):
+ *     01-07 → día 14 | 08-15 → día 21 | 16-22 → día 30 (o fin de mes) | 23-fin → día 07 mes sig.
  */
 export function buildBloquesMes(mes) {
-  const [anio, mm] = mes.split('-').map(Number);
+  const [anio, mm] = String(mes || '').split('-').map(Number);
+  if (!anio || !mm) return [];
+
+  const ultimoDia = new Date(anio, mm, 0).getDate();
   const sig = new Date(anio, mm, 1);
   const mesSig = `${sig.getFullYear()}-${String(sig.getMonth() + 1).padStart(2, '0')}`;
   const dia = (m, d) => `${m}-${String(d).padStart(2, '0')}`;
 
+  const esPrimerMesBimestre = mm % 2 === 1;
+
+  if (esPrimerMesBimestre) {
+    return [
+      { desde: 1, hasta: 7, fechaPago: dia(mes, 13) },
+      { desde: 8, hasta: 15, fechaPago: dia(mes, 19) },
+      { desde: 16, hasta: 22, fechaPago: dia(mes, Math.min(27, ultimoDia)) },
+      { desde: 23, hasta: ultimoDia, fechaPago: dia(mesSig, 4) }
+    ];
+  }
+
   return [
-    { desde: 1, hasta: 5, fechaPago: dia(mes, 20) },
-    { desde: 6, hasta: 10, fechaPago: dia(mes, 25) },
-    { desde: 11, hasta: 15, fechaPago: dia(mes, 28) },
-    { desde: 16, hasta: 20, fechaPago: dia(mesSig, 5) },
-    { desde: 21, hasta: 31, fechaPago: dia(mesSig, 10) }
+    { desde: 1, hasta: 7, fechaPago: dia(mes, 14) },
+    { desde: 8, hasta: 15, fechaPago: dia(mes, 21) },
+    { desde: 16, hasta: 22, fechaPago: dia(mes, Math.min(30, ultimoDia)) },
+    { desde: 23, hasta: ultimoDia, fechaPago: dia(mesSig, 7) }
   ];
 }
 
-/** Configuración mensual (todos los proveedores) para los meses indicados. */
+/** Configuración de umbrales (todos los proveedores) para los meses indicados. */
 export function buildConfiguracionMensual(meses = []) {
-  return meses.flatMap((mes) =>
+  const unicos = [...new Set((meses || []).filter(Boolean))];
+  return unicos.flatMap((mes) =>
     ['aero', 'price', 'azabache'].map((proveedorId) => ({
       mes,
       proveedorId,
@@ -340,9 +368,32 @@ export function buildConfiguracionMensual(meses = []) {
   );
 }
 
+/** Construye la configuración bimestral (2 meses consecutivos) a partir de un mes. */
+export function buildConfiguracionBimestral(mesBase) {
+  const [anio, mm] = String(mesBase || '').split('-').map(Number);
+  if (!anio || !mm) return [];
+  const inicioBim = mm % 2 === 1 ? mm : mm - 1;
+  const m1 = `${anio}-${String(inicioBim).padStart(2, '0')}`;
+  const d2 = new Date(anio, inicioBim, 1);
+  const m2 = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, '0')}`;
+  return buildConfiguracionMensual([m1, m2]);
+}
+
 const MES_ACTUAL = (() => {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 })();
 
-export const INITIAL_CONFIGURACION_MENSUAL = buildConfiguracionMensual([MES_ACTUAL]);
+const MES_SIGUIENTE = (() => {
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+})();
+
+// Pre-cargamos el bimestre oficial Noviembre + Diciembre 2026 junto con el bimestre en curso
+export const INITIAL_CONFIGURACION_MENSUAL = buildConfiguracionMensual([
+  '2026-11',
+  '2026-12',
+  MES_ACTUAL,
+  MES_SIGUIENTE
+]);

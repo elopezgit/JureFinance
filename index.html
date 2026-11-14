@@ -15,6 +15,17 @@
     <script src="https://apis.google.com/js/api.js" async defer></script>
   </head>
   <body>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('jurefinance_theme');
+          if (t !== 'light' && t !== 'dark') t = 'light';
+          document.documentElement.dataset.theme = t;
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

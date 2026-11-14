@@ -160,17 +160,47 @@ check(
     JSON.stringify(items1.map((i) => (i.ofertas || []).map((o) => o.id)))
 );
 
-// 7) BCP: rangos de emisión → fecha de pago y acumulación por bloque.
-const configNov = buildConfiguracionMensual(['2026-11']);
+// 7) BCP (Aero Bimestral): rangos de emisión → fecha de pago y acumulación por umbral.
+const configNov = buildConfiguracionMensual(['2026-11', '2026-12']);
 check(
-  'BCP: emisión 03/11 cae en el bloque 01-05 con pago 20/11',
-  getBloqueBCP(configNov, 'Aero', '2026-11-03')?.fechaPago === '2026-11-20',
+  'BCP Aero Nov: emisión 03/11 cae en el umbral 01-07 con pago 13/11',
+  getBloqueBCP(configNov, 'Aero', '2026-11-03')?.fechaPago === '2026-11-13',
   `=> ${getBloqueBCP(configNov, 'Aero', '2026-11-03')?.fechaPago}`
 );
 check(
-  'BCP: emisión 07/11 cae en el bloque 06-10 con pago 25/11',
-  getBloqueBCP(configNov, 'Aero', '2026-11-07')?.fechaPago === '2026-11-25',
-  `=> ${getBloqueBCP(configNov, 'Aero', '2026-11-07')?.fechaPago}`
+  'BCP Aero Nov: emisión 10/11 cae en el umbral 08-15 con pago 19/11',
+  getBloqueBCP(configNov, 'Aero', '2026-11-10')?.fechaPago === '2026-11-19',
+  `=> ${getBloqueBCP(configNov, 'Aero', '2026-11-10')?.fechaPago}`
+);
+check(
+  'BCP Aero Nov: emisión 18/11 cae en el umbral 16-22 con pago 27/11',
+  getBloqueBCP(configNov, 'Aero', '2026-11-18')?.fechaPago === '2026-11-27',
+  `=> ${getBloqueBCP(configNov, 'Aero', '2026-11-18')?.fechaPago}`
+);
+check(
+  'BCP Aero Nov: emisión 25/11 cae en el umbral 23-30 con pago 04/12',
+  getBloqueBCP(configNov, 'Aero', '2026-11-25')?.fechaPago === '2026-12-04',
+  `=> ${getBloqueBCP(configNov, 'Aero', '2026-11-25')?.fechaPago}`
+);
+check(
+  'BCP Aero Dic: emisión 03/12 cae en el umbral 01-07 con pago 14/12',
+  getBloqueBCP(configNov, 'Aero', '2026-12-03')?.fechaPago === '2026-12-14',
+  `=> ${getBloqueBCP(configNov, 'Aero', '2026-12-03')?.fechaPago}`
+);
+check(
+  'BCP Aero Dic: emisión 10/12 cae en el umbral 08-15 con pago 21/12',
+  getBloqueBCP(configNov, 'Aero', '2026-12-10')?.fechaPago === '2026-12-21',
+  `=> ${getBloqueBCP(configNov, 'Aero', '2026-12-10')?.fechaPago}`
+);
+check(
+  'BCP Aero Dic: emisión 18/12 cae en el umbral 16-22 con pago 30/12',
+  getBloqueBCP(configNov, 'Aero', '2026-12-18')?.fechaPago === '2026-12-30',
+  `=> ${getBloqueBCP(configNov, 'Aero', '2026-12-18')?.fechaPago}`
+);
+check(
+  'BCP Aero Dic: emisión 28/12 cae en el umbral 23-31 con pago 07/01',
+  getBloqueBCP(configNov, 'Aero', '2026-12-28')?.fechaPago === '2027-01-07',
+  `=> ${getBloqueBCP(configNov, 'Aero', '2026-12-28')?.fechaPago}`
 );
 
 const cotizacionBCP = {
@@ -182,9 +212,9 @@ const cotizacionBCP = {
   servicios: {
     items: [
       ['srv-bcp-1', '2026-11-03', 1000],
-      ['srv-bcp-2', '2026-11-03', 2000],
+      ['srv-bcp-2', '2026-11-05', 2000],
       ['srv-bcp-3', '2026-11-02', 1250],
-      ['srv-bcp-4', '2026-11-07', 1500]
+      ['srv-bcp-4', '2026-11-10', 1500]
     ].map(([id, fechaEmision, costo]) => ({
       id,
       tipo: 'aereo',
@@ -215,21 +245,21 @@ check(
   `=> ${pagosBCP.map((p) => p.origenVencimiento).join(',')}`
 );
 check(
-  'BCP: bloque 01-05 acumula 4250',
+  'BCP: bloque 01-07 acumula 4250 el 13/11',
   pagosBCP
-    .filter((p) => p.fechaVencimiento === '2026-11-20')
+    .filter((p) => p.fechaVencimiento === '2026-11-13')
     .reduce((acc, p) => acc + p.montoTotal, 0) === 4250
 );
 check(
-  'BCP: bloque 06-10 acumula 1500',
+  'BCP: bloque 08-15 acumula 1500 el 19/11',
   pagosBCP
-    .filter((p) => p.fechaVencimiento === '2026-11-25')
+    .filter((p) => p.fechaVencimiento === '2026-11-19')
     .reduce((acc, p) => acc + p.montoTotal, 0) === 1500
 );
 check(
-  'BCP: el rango visible es 01-05',
-  pagosBCP.find((p) => p.fechaVencimiento === '2026-11-20')?.rangoBCPCorto === '01-05',
-  `=> ${pagosBCP.find((p) => p.fechaVencimiento === '2026-11-20')?.rangoBCPCorto}`
+  'BCP: el rango visible es 01-07',
+  pagosBCP.find((p) => p.fechaVencimiento === '2026-11-13')?.rangoBCPCorto === '01-07',
+  `=> ${pagosBCP.find((p) => p.fechaVencimiento === '2026-11-13')?.rangoBCPCorto}`
 );
 check(
   'auditoría: los nombres de pasajeros llegan al pago',
@@ -239,9 +269,9 @@ check(
 
 const flujoBCP = agruparPorFechaVencimiento(pagosBCP);
 check('flujo: 2 fechas de pago', flujoBCP.length === 2, `=> ${flujoBCP.length}`);
-check('flujo: primera fecha 20/11', flujoBCP[0]?.fecha === '2026-11-20');
-check('flujo: 3 tickets el 20/11', flujoBCP[0]?.cantidad === 3, `=> ${flujoBCP[0]?.cantidad}`);
-check('flujo: total USD 4250 el 20/11', flujoBCP[0]?.monedas[0]?.montoTotal === 4250);
+check('flujo: primera fecha 13/11', flujoBCP[0]?.fecha === '2026-11-13');
+check('flujo: 3 tickets el 13/11', flujoBCP[0]?.cantidad === 3, `=> ${flujoBCP[0]?.cantidad}`);
+check('flujo: total USD 4250 el 13/11', flujoBCP[0]?.monedas[0]?.montoTotal === 4250);
 
 const gruposProv = agruparTicketsPorProveedor(flujoBCP[0].items);
 check('flujo: agrupa por proveedor', gruposProv.length === 1 && gruposProv[0].proveedor === 'Aero');
@@ -253,16 +283,16 @@ const agendaBCP = construirAgendaPagos({
   configMensual: configNov
 });
 const liquidacionesBCP = liquidacionesPorProveedorYFecha(agendaBCP, configNov);
-const liq20 = liquidacionesBCP.find((l) => l.fechaVencimiento === '2026-11-20');
+const liq13 = liquidacionesBCP.find((l) => l.fechaVencimiento === '2026-11-13');
 check(
-  'liquidación: 20/11 agrupa 3 tickets por 4250',
-  liq20?.cantidad === 3 && liq20?.montoTotal === 4250,
-  `=> ${liq20?.cantidad} / ${liq20?.montoTotal}`
+  'liquidación: 13/11 agrupa 3 tickets por 4250',
+  liq13?.cantidad === 3 && liq13?.montoTotal === 4250,
+  `=> ${liq13?.cantidad} / ${liq13?.montoTotal}`
 );
-check('liquidación: muestra el rango 01-05', liq20?.rangoCorto === '01-05');
+check('liquidación: muestra el rango 01-07', liq13?.rangoCorto === '01-07');
 
-const registrosBloque = repartirPagoEnLiquidacion(liq20, 4250, {
-  fecha: '2026-11-20'
+const registrosBloque = repartirPagoEnLiquidacion(liq13, 4250, {
+  fecha: '2026-11-13'
 });
 check(
   'pago de bloque: genera un registro por ticket',
@@ -279,13 +309,13 @@ const agendaPagada = construirAgendaPagos({
   configMensual: configNov,
   pagosTTOO: registrosBloque
 });
-const saldo20 = agendaPagada
-  .filter((p) => p.fechaVencimiento === '2026-11-20')
+const saldo13 = agendaPagada
+  .filter((p) => p.fechaVencimiento === '2026-11-13')
   .reduce((acc, p) => acc + p.saldo, 0);
-check('pago de bloque: el bloque 01-05 queda saldado', saldo20 === 0, `=> ${saldo20}`);
+check('pago de bloque: el bloque 01-07 queda saldado', saldo13 === 0, `=> ${saldo13}`);
 
-const registrosParciales = repartirPagoEnLiquidacion(liq20, 1000, {
-  fecha: '2026-11-20'
+const registrosParciales = repartirPagoEnLiquidacion(liq13, 1000, {
+  fecha: '2026-11-13'
 });
 check(
   'pago parcial: imputa 1000 al primer ticket y deja saldo',
@@ -431,7 +461,7 @@ check('CSV: incluye al cliente', csv.includes('Cliente BCP'));
 check('CSV: incluye los nombres de pasajeros', csv.includes('Ana Pérez'));
 check('CSV: incluye el costo de un ticket', csv.includes('1000'));
 
-// 12) Circuito JureTravel: Proveedor 1 (Aero 24-48 hs) + Proveedor 2 (Azabache PDF + Reservas 1-5 -> día 20).
+// 12) Circuito JureTravel: Proveedor 1 (Aero Umbrales Bimestrales: 01-07 -> 13/11) + Proveedor 2 (Azabache PDF + Reservas).
 const cotizacionJureTravel = {
   id: 'COT-JT-1',
   cliente: 'Cliente JureTravel',
@@ -448,9 +478,8 @@ const cotizacionJureTravel = {
         precioVenta: 2640, // 2200 base Azabache + 20%
         markupPct: 20,
         estadoVuelo: 'Emitido',
-        fechaEmision: '2026-11-03',
-        reglaVencimiento: '24-48hs',
-        plazoPagoHoras: 48,
+        fechaEmision: '2026-11-03', // Umbral 01 al 07 Noviembre -> vence 13 Noviembre
+        reglaVencimiento: 'bcp',
         ofertaCompraId: 'of-jt-aero',
         ofertas: [
           { id: 'of-jt-aero', proveedorId: 'aero', proveedor: 'Aero', costo: 1900, esBasePresupuesto: false },
@@ -465,7 +494,7 @@ const cotizacionJureTravel = {
         precioVenta: 1800, // 1500 + 20%
         markupPct: 20,
         estadoReserva: 'Reservado',
-        fechaReserva: '2026-11-03', // Bloque 01-05 -> paga 20/11
+        fechaReserva: '2026-11-03', // Bloque 01-07 -> vence 13/11
         ofertaCompraId: 'of-jt-aza-hotel',
         ofertas: [
           { id: 'of-jt-aza-hotel', proveedorId: 'azabache', proveedor: 'Azabache', costo: 1500, esBasePresupuesto: true }
@@ -479,7 +508,7 @@ const cotizacionJureTravel = {
         precioVenta: 120, // 100 + 20%
         markupPct: 20,
         estadoReserva: 'Reservado',
-        fechaReserva: '2026-11-04', // Bloque 01-05 -> paga 20/11
+        fechaReserva: '2026-11-04', // Bloque 01-07 -> vence 13/11
         ofertaCompraId: 'of-jt-aza-tras',
         ofertas: [
           { id: 'of-jt-aza-tras', proveedorId: 'azabache', proveedor: 'Azabache', costo: 100, esBasePresupuesto: true }
@@ -507,18 +536,18 @@ const pagoVueloJT = pagosJT.find((p) => p.seccion === 'aereo');
 const pagoHotelJT = pagosJT.find((p) => p.seccion === 'hotel');
 const pagoTrasJT = pagosJT.find((p) => p.seccion === 'traslados');
 check(
-  'JT: vuelo emitido el 03/11 con plazo 48 hs vence el 05/11',
-  pagoVueloJT?.fechaVencimiento === '2026-11-05' && pagoVueloJT?.origenVencimiento === '24-48hs',
+  'JT: vuelo emitido en Aero el 03/11 (umbral 01-07) vence el 13/11',
+  pagoVueloJT?.fechaVencimiento === '2026-11-13' && pagoVueloJT?.origenVencimiento === 'bcp',
   `=> ${pagoVueloJT?.fechaVencimiento} (${pagoVueloJT?.origenVencimiento})`
 );
 check(
-  'JT: hotel reservado el 03/11 (bloque 01-05) vence el 20/11',
-  pagoHotelJT?.fechaVencimiento === '2026-11-20' && pagoHotelJT?.origenVencimiento === 'bcp',
+  'JT: hotel reservado el 03/11 vence el 13/11',
+  pagoHotelJT?.fechaVencimiento === '2026-11-13' && pagoHotelJT?.origenVencimiento === 'bcp',
   `=> ${pagoHotelJT?.fechaVencimiento}`
 );
 check(
-  'JT: traslado reservado el 04/11 (bloque 01-05) vence el 20/11',
-  pagoTrasJT?.fechaVencimiento === '2026-11-20' && pagoTrasJT?.origenVencimiento === 'bcp',
+  'JT: traslado reservado el 04/11 vence el 13/11',
+  pagoTrasJT?.fechaVencimiento === '2026-11-13' && pagoTrasJT?.origenVencimiento === 'bcp',
   `=> ${pagoTrasJT?.fechaVencimiento}`
 );
 

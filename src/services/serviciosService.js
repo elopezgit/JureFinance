@@ -262,7 +262,7 @@ export function createEmptyItem(tipo, { proveedorId = '', proveedor = '', fechaR
   const tipoFinal = TIPOS_SERVICIO.includes(tipo) ? tipo : 'extra';
 
   // Para un aéreo nuevo, sugerimos por defecto las 2 ofertas del flujo real:
-  // 1) Proveedor 1 (Aero): costo real de compra del vuelo (pago a 24-48 hs de emitido)
+  // 1) Proveedor 1 (Aero): costo real de compra del vuelo (liquidado por umbrales de emisión bimestrales: 01-07, 08-15, 16-22, 23-fin)
   // 2) Proveedor 2 (Azabache): costo del mismo vuelo en el constructor de PDF (referencia al cliente)
   if (tipoFinal === TIPO_AEREO) {
     const ofAero = createEmptyOferta({
@@ -288,14 +288,13 @@ export function createEmptyItem(tipo, { proveedorId = '', proveedor = '', fechaR
       estadoVuelo: 'SinReservar',
       fechaReserva: fechaReserva || '',
       fechaEmision: '',
-      reglaVencimiento: '24-48hs',
+      reglaVencimiento: 'bcp',
       plazoPagoHoras: 48,
       tramos: []
     };
   }
 
   // Para hotel, traslado, asistencia y extras: por defecto se reservan con el proveedor 2 (Azabache)
-  // y vencen según la grilla de bloques de Configuración Mensual (1-5 -> día 20, etc.)
   const provIdTerrestre = proveedorId && proveedorId !== 'aero' ? proveedorId : 'azabache';
   const provNombreTerrestre =
     proveedor && proveedorIdDe(proveedor) !== 'aero'
@@ -319,7 +318,9 @@ export function createEmptyItem(tipo, { proveedorId = '', proveedor = '', fechaR
     ofertas: [oferta],
     ofertaCompraId: oferta.id,
     estadoReserva: 'Reservado',
-    fechaReserva: fechaReserva || ''
+    fechaReserva: fechaReserva || '',
+    reglaVencimiento: 'bcp',
+    plazoPagoHoras: 48
   };
 }
 
@@ -405,9 +406,7 @@ export function normalizarItem(item) {
     const reglaVencimiento =
       item.reglaVencimiento === '24-48hs' || item.reglaVencimiento === 'bcp'
         ? item.reglaVencimiento
-        : item.plazoPagoHoras
-          ? '24-48hs'
-          : undefined;
+        : 'bcp';
 
     return {
       ...base,
@@ -415,16 +414,24 @@ export function normalizarItem(item) {
       estadoVuelo: item.estadoVuelo || 'SinReservar',
       fechaReserva: item.fechaReserva || '',
       fechaEmision: item.fechaEmision || '',
-      ...(reglaVencimiento ? { reglaVencimiento } : {}),
+      reglaVencimiento,
       plazoPagoHoras: plazoHoras,
       tramos
     };
   }
 
+  const plazoTerrestre = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
+  const reglaTerrestre =
+    item.reglaVencimiento === '24-48hs' || item.reglaVencimiento === 'bcp'
+      ? item.reglaVencimiento
+      : 'bcp';
+
   return {
     ...base,
     estadoReserva: item.estadoReserva || 'Reservado',
-    fechaReserva: item.fechaReserva || item.fechaEmision || ''
+    fechaReserva: item.fechaReserva || item.fechaEmision || '',
+    reglaVencimiento: reglaTerrestre,
+    plazoPagoHoras: plazoTerrestre
   };
 }
 

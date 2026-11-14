@@ -23,13 +23,13 @@ function sumarDias(fecha, dias) {
   return iso(d);
 }
 
-// Bloques de emisión (mismos rangos que la plantilla de Configuración Mensual).
+// Bloques oficiales de emisión de Aero (renovación bimestral cada 2 meses:
+// 01 al 07, 08 al 15, 16 al 22, 23 al 30/31).
 const BLOQUES = [
-  { rango: '01-05', dias: [2, 4] },
-  { rango: '06-10', dias: [7, 9] },
-  { rango: '11-15', dias: [12, 14] },
-  { rango: '16-20', dias: [17, 19] },
-  { rango: '21-31', dias: [22, 24] }
+  { rango: '01-07', dias: [2, 5, 7] },
+  { rango: '08-15', dias: [9, 12, 14] },
+  { rango: '16-22', dias: [17, 20] },
+  { rango: '23-30', dias: [24, 27] }
 ];
 
 // Datos de los 10 vuelos (orden: se asignan a los días de emisión de arriba).
@@ -106,17 +106,14 @@ export function buildDemoVuelosEmitidos(hoy = new Date()) {
             proveedor: 'Aero',
             montoTotalNeto: dato.neto,
             precioVenta: Math.round(dato.neto * 1.25),
-            vencimientoTTOO: '', // se calcula desde la fecha de emisión (24-48 hs o bloque BCP)
-            detalles:
-              n <= 4
-                ? `Emitido confirmado el ${dia} ${MESES_ABREV[mesIdx]} · Pago a Aero en ${n % 2 === 0 ? 48 : 24} hs`
-                : `Emitido el ${dia} ${MESES_ABREV[mesIdx]} · bloque de emisión ${bloque.rango}`,
+            vencimientoTTOO: '', // se calcula desde la fecha de emisión por umbrales bimestrales de Aero
+            detalles: `Emitido en cuenta corriente Aero el ${dia} ${MESES_ABREV[mesIdx]} · Umbral ${bloque.rango}`,
             politicaReembolso: 'NO REEM',
             estadoVuelo: 'Emitido',
             fechaReserva,
             fechaEmision,
-            reglaVencimiento: n <= 4 ? '24-48hs' : 'bcp',
-            plazoPagoHoras: n % 2 === 0 ? 48 : 24,
+            reglaVencimiento: 'bcp',
+            plazoPagoHoras: 48,
             ofertaCompraId: `of-aero-demo-${n}`,
             ofertas: [
               {

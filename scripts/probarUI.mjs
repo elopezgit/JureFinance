@@ -90,7 +90,7 @@ check('renderiza el reporte de flujo de caja BCP', () => {
   if (!html.includes('Ana Pérez')) {
     throw new Error('No se renderizaron los nombres de pasajeros');
   }
-  if (!html.includes('01-05')) {
+  if (!html.includes('01-07')) {
     throw new Error('No se renderizó el rango BCP');
   }
 });

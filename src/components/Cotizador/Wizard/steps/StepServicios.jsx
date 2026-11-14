@@ -242,18 +242,18 @@ export default function StepServicios({
     }
 
     if (servicio.tipo === 'aereo') {
-      const usarBCP = servicio.reglaVencimiento === 'bcp';
+      const usar2448 = servicio.reglaVencimiento === '24-48hs';
       if (!servicio.fechaEmision) {
         return {
           fecha: '',
           etiqueta:
             servicio.estadoVuelo === 'Emitido'
-              ? 'Cargá la Fecha de Emisión para calcular las 24-48 hs'
-              : 'Al marcar como Emitido (Confirmado), vencerá a las 24-48 hs de la emisión',
+              ? 'Cargá la Fecha de Emisión para calcular el umbral de pago de Aero'
+              : 'Al marcar como Emitido, vence según los umbrales bimestrales de Aero (01-07, 08-15, 16-22, 23-fin)',
           origen: 'pendiente-emision'
         };
       }
-      if (!usarBCP) {
+      if (usar2448) {
         const horas = Number(servicio.plazoPagoHoras) === 24 ? 24 : 48;
         const fecha = getFechaPagoAereoEmitido(servicio.fechaEmision, horas);
         return {
@@ -266,22 +266,23 @@ export default function StepServicios({
       if (bloque) {
         return {
           fecha: bloque.fechaPago,
-          etiqueta: `Bloque ${bloque.rangoCorto} → Pago el ${formatFechaLarga(bloque.fechaPago)}`,
-          origen: 'bcp'
+          etiqueta: `Umbral ${bloque.rangoCorto} → Vence el ${formatFechaLarga(bloque.fechaPago)} (Cuenta Corriente Aero)`,
+          origen: 'bcp',
+          bloque
         };
       }
       return {
         fecha: '',
-        etiqueta: 'Sin bloque configurado para ese mes',
+        etiqueta: 'Sin umbral configurado para ese mes (renovar bimestre en Configuración)',
         origen: 'sin-config'
       };
     }
 
-    // Servicios terrestres (Hotel, Traslado, Asistencia, Extra) -> Grilla de bloques por Fecha de Reserva
+    // Servicios terrestres (Hotel, Traslado, Asistencia, Extra)
     if (servicio.estadoReserva === 'SinReservar') {
       return {
         fecha: '',
-        etiqueta: 'Sin reservar aún (al pasar a Reservado entra en la grilla mensual)',
+        etiqueta: 'Sin reservar aún (al pasar a Reservado impacta en el Calendario de Pagos)',
         origen: 'sin-reservar'
       };
     }
@@ -290,8 +291,18 @@ export default function StepServicios({
     if (!fechaRef) {
       return {
         fecha: '',
-        etiqueta: 'Cargá la Fecha de Reserva para calcular el bloque de pago (ej. 1-5 → día 20)',
+        etiqueta: 'Cargá la Fecha de Reserva para calcular la fecha de pago al proveedor',
         origen: 'sin-fecha'
+      };
+    }
+
+    if (servicio.reglaVencimiento === '24-48hs') {
+      const horas = Number(servicio.plazoPagoHoras) === 24 ? 24 : 48;
+      const fecha = getFechaPagoAereoEmitido(fechaRef, horas);
+      return {
+        fecha,
+        etiqueta: `Pago a ${compra.proveedor || 'Azabache'} en ${horas} hs post-reserva (${formatFechaLarga(fecha)})`,
+        origen: '24-48hs'
       };
     }
 
@@ -299,7 +310,7 @@ export default function StepServicios({
     if (bloque) {
       return {
         fecha: bloque.fechaPago,
-        etiqueta: `Reservado en bloque ${bloque.rangoCorto} → Se paga a ${compra.proveedor || 'Azabache'} el ${formatFechaLarga(bloque.fechaPago)}`,
+        etiqueta: `Umbral ${bloque.rangoCorto} → Se paga a ${compra.proveedor || 'Azabache'} el ${formatFechaLarga(bloque.fechaPago)}`,
         origen: 'bcp',
         bloque
       };
@@ -307,7 +318,7 @@ export default function StepServicios({
 
     return {
       fecha: '',
-      etiqueta: `Sin bloque configurado en ${compra.proveedor || 'el proveedor'} para ${fechaRef.slice(0, 7)}`,
+      etiqueta: `Sin umbral configurado en ${compra.proveedor || 'el proveedor'} para ${fechaRef.slice(0, 7)}`,
       origen: 'sin-config'
     };
   };
@@ -338,7 +349,7 @@ export default function StepServicios({
             <div>
               <h3 className="card-title">Carga de Servicios: Costos por Proveedor y Precio al Cliente</h3>
               <span className="card-subtitle">
-                1° Costo de Vuelo en Aero (pago 24-48 hs de emitido) · 2° Costo en Azabache de Vuelo + Hotel + Traslado (pago por grilla 1-5 → día 20) · 3° Precio PDF al Cliente.
+                1° Costo de Vuelo en Aero (vence por umbrales bimestrales: 01-07, 08-15, 16-22, 23-fin) · 2° Costo en Azabache de Vuelo + Hotel + Traslado · 3° Precio PDF al Cliente.
               </span>
             </div>
           </div>
@@ -363,7 +374,7 @@ export default function StepServicios({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <FileText size={16} color="var(--neon-cyan)" />
-            <span style={{ fontSize: '0.84rem', color: '#e2e8f0' }}>
+            <span style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
               <strong>Constructor de Presupuesto (Azabache → Cliente):</strong> Costo Base Paquete:{' '}
               <strong className="mono" style={{ color: 'var(--neon-amber)' }}>
                 {formatoMoneda(moneda, totalCostoBasePDF)}
@@ -468,8 +479,8 @@ export default function StepServicios({
                   <h3 className="card-title" style={{ fontSize: '1.15rem' }}>{SECCION_LABEL[tipo] || tipo}</h3>
                   <span className="card-subtitle">
                     {tipo === 'aereo'
-                      ? 'Cargá el costo en Aero (Compra Real → pago 24-48 hs post-emisión) y el costo en Azabache (Referencia Constructor PDF)'
-                      : 'Cargá el costo en Azabache/Proveedor → los reservados del 1-5 vencen el día 20 según la grilla mensual'}
+                      ? 'Cargá el costo en Aero (Compra Real → vence según umbrales bimestrales 01-07, 08-15, 16-22, 23-fin) y el costo en Azabache (Referencia Constructor PDF)'
+                      : 'Cargá el costo en Azabache/Proveedor y la fecha de reserva para calcular su vencimiento en el Calendario de Pagos'}
                   </span>
                 </div>
               </div>
@@ -653,7 +664,7 @@ export default function StepServicios({
                             <div className="service-subcard-header">
                               <div className="service-subcard-title">
                                 <Plane size={15} color="var(--neon-cyan)" />
-                                <span>Itinerario y Confirmación de Emisión (Pago a Aero en 24-48 hs)</span>
+                                <span>Itinerario y Emisión en Aero (Vencimiento por Umbrales Bimestrales · Cuenta Corriente)</span>
                                 <span className="badge badge-info" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
                                   {(servicio.tramos || []).length} tramo{(servicio.tramos || []).length === 1 ? '' : 's'}
                                 </span>
@@ -813,15 +824,15 @@ export default function StepServicios({
 
                               <div className="flight-lifecycle-col">
                                 <label className="form-label" style={{ fontSize: '0.72rem', marginBottom: '4px' }}>
-                                  Plazo de Pago al Proveedor Aéreo
+                                  Regla de Vencimiento Aéreo (Aero)
                                 </label>
                                 <select
                                   className="select-field"
                                   style={{ height: '36px', fontSize: '0.84rem' }}
                                   value={
-                                    servicio.reglaVencimiento === 'bcp'
-                                      ? 'bcp'
-                                      : String(Number(servicio.plazoPagoHoras) === 24 ? 24 : 48)
+                                    servicio.reglaVencimiento === '24-48hs'
+                                      ? String(Number(servicio.plazoPagoHoras) === 24 ? 24 : 48)
+                                      : 'bcp'
                                   }
                                   onChange={(e) => {
                                     const val = e.target.value;
@@ -839,9 +850,9 @@ export default function StepServicios({
                                     }
                                   }}
                                 >
+                                  <option value="bcp">📅 Umbrales Aero (01-07, 08-15, 16-22, 23-fin · Bimestral)</option>
                                   <option value="24">⚡ 24 hs posteriores al Emitido (+1 día)</option>
                                   <option value="48">⚡ 48 hs posteriores al Emitido (+2 días)</option>
-                                  <option value="bcp">📅 Según Grilla Mensual BCP</option>
                                 </select>
                               </div>
 
@@ -859,7 +870,7 @@ export default function StepServicios({
                               >
                                 <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   <CalendarClock size={14} />
-                                  <span>Vencimiento de Pago (Vuelo):</span>
+                                  <span>Vencimiento de Pago (Vuelo Aero):</span>
                                 </div>
                                 <div style={{ marginTop: '2px', color: '#fff' }}>{infoVenc.etiqueta}</div>
                               </div>
@@ -867,7 +878,7 @@ export default function StepServicios({
                           </div>
                         )}
 
-                        {/* 3B. Bloque Especial para HOTEL, TRASLADOS Y SERVICIOS RESERVADOS (Grilla 1-5 -> día 20) */}
+                        {/* 3B. Bloque Especial para HOTEL, TRASLADOS Y SERVICIOS RESERVADOS */}
                         {tipo !== 'aereo' && (
                           <div className="service-subcard">
                             <div className="flight-lifecycle-strip" style={{ marginTop: 0 }}>
@@ -893,7 +904,7 @@ export default function StepServicios({
 
                               <div className="flight-lifecycle-col">
                                 <label className="form-label" style={{ fontSize: '0.72rem', marginBottom: '4px' }}>
-                                  Fecha de Reserva (Define bloque 1-5 → pago día 20)
+                                  Fecha de Reserva / Confirmación
                                 </label>
                                 <input
                                   type="date"
@@ -907,6 +918,40 @@ export default function StepServicios({
                                     }))
                                   }
                                 />
+                              </div>
+
+                              <div className="flight-lifecycle-col">
+                                <label className="form-label" style={{ fontSize: '0.72rem', marginBottom: '4px' }}>
+                                  Regla de Vencimiento ({compra?.proveedor || 'Proveedor'})
+                                </label>
+                                <select
+                                  className="select-field"
+                                  style={{ height: '36px', fontSize: '0.84rem' }}
+                                  value={
+                                    servicio.reglaVencimiento === '24-48hs'
+                                      ? String(Number(servicio.plazoPagoHoras) === 24 ? 24 : 48)
+                                      : 'bcp'
+                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === 'bcp') {
+                                      actualizarServicio(servicio.id, (prev) => ({
+                                        ...prev,
+                                        reglaVencimiento: 'bcp'
+                                      }));
+                                    } else {
+                                      actualizarServicio(servicio.id, (prev) => ({
+                                        ...prev,
+                                        reglaVencimiento: '24-48hs',
+                                        plazoPagoHoras: Number(val)
+                                      }));
+                                    }
+                                  }}
+                                >
+                                  <option value="bcp">📅 Según Umbrales Configurados</option>
+                                  <option value="24">⚡ 24 hs post-reserva (+1 día)</option>
+                                  <option value="48">⚡ 48 hs post-reserva (+2 días)</option>
+                                </select>
                               </div>
 
                               <div
@@ -923,7 +968,7 @@ export default function StepServicios({
                               >
                                 <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   <CalendarClock size={14} />
-                                  <span>Vencimiento según Grilla Mensual:</span>
+                                  <span>Vencimiento de Pago:</span>
                                 </div>
                                 <div style={{ marginTop: '2px', color: '#fff' }}>{infoVenc.etiqueta}</div>
                               </div>
@@ -1195,7 +1240,7 @@ export default function StepServicios({
                 <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>
                   Proveedor: {prov.proveedor}
                 </div>
-                <div style={{ marginTop: '6px', fontSize: '0.82rem', color: '#cbd5e1' }}>
+                <div style={{ marginTop: '6px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                   Cotizado en {prov.proveedor}:{' '}
                   <strong className="mono">{formatoMoneda(moneda, prov.totalCotizadoReferencia)}</strong>
                 </div>
@@ -1222,7 +1267,7 @@ export default function StepServicios({
               <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--neon-cyan)', fontWeight: 800 }}>
                 Presupuesto Final al Cliente (PDF)
               </div>
-              <div style={{ marginTop: '6px', fontSize: '0.82rem', color: '#cbd5e1' }}>
+              <div style={{ marginTop: '6px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                 Costo Total Compra Real: <strong className="mono">{formatoMoneda(moneda, totalCostoReal)}</strong>
               </div>
               <div style={{ marginTop: '4px', fontSize: '0.95rem', color: '#fff' }}>

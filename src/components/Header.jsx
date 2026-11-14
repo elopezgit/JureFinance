@@ -1,13 +1,15 @@
 // Header.jsx - Barra superior futurista con estilo Cyber-Fintech
 import React from 'react';
-import { Plus, AlertCircle, RefreshCw, Search, Bell, Settings, User } from 'lucide-react';
+import { Plus, AlertCircle, RefreshCw, Search, Bell, Settings, User, Sun, Moon } from 'lucide-react';
 
 export default function Header({
   activeTab,
   onNewQuote,
   urgentesCount,
   onSyncDrive,
-  isSyncingDrive
+  isSyncingDrive,
+  theme = 'light',
+  onToggleTheme
 }) {
   const getTabTitle = () => {
     switch (activeTab) {
@@ -135,9 +137,18 @@ export default function Header({
           </button>
         )}
 
+        <button
+          className="btn btn-secondary btn-sm btn-icon-only"
+          onClick={onToggleTheme}
+          title={theme === 'light' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'}
+          aria-label="Cambiar tema"
+        >
+          {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+        </button>
+
         {/* Avatar de usuario con anillo activo verde brillante */}
         <div className="header-avatar" title="Sesión activa: Jure Travel">
-          <User size={18} color="#ffffff" />
+          <User size={18} color="var(--text-main)" />
           <div className="header-avatar-status" />
         </div>
       </div>

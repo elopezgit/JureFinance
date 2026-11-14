@@ -466,3 +466,34 @@ export function shiftMes(mes, delta) {
 export function getMesActual() {
   return getMesFromFecha(new Date());
 }
+
+/**
+ * Devuelve el par de meses [mes1, mes2] que componen el bimestre al que
+ * pertenece `mes` ('YYYY-MM').
+ * Aero renueva su tabla de umbrales de vencimiento cada 2 meses (ej. Noviembre + Diciembre).
+ */
+export function getBimestreDeMes(mes) {
+  if (!mes) return [];
+  const [anio, mm] = String(mes).split('-').map(Number);
+  if (!anio || !mm) return [mes];
+  // Bimestres naturales: (1,2), (3,4), (5,6), (7,8), (9,10), (11,12)
+  const mesInicioNum = mm % 2 === 1 ? mm : mm - 1;
+  const mes1 = `${anio}-${String(mesInicioNum).padStart(2, '0')}`;
+  const mes2 = shiftMes(mes1, 1);
+  return [mes1, mes2];
+}
+
+/**
+ * Etiqueta legible de un bimestre a partir de cualquiera de sus meses:
+ * '2026-11' → 'Noviembre – Diciembre 2026'.
+ */
+export function formatBimestreLabel(mes) {
+  const [m1, m2] = getBimestreDeMes(mes);
+  if (!m1 || !m2) return formatMesLabel(mes);
+  const [a1] = m1.split('-');
+  const [a2] = m2.split('-');
+  const l1 = formatMesLabel(m1).replace(` ${a1}`, '');
+  const l2 = formatMesLabel(m2);
+  return a1 === a2 ? `${l1} – ${l2}` : `${formatMesLabel(m1)} – ${l2}`;
+}
+

@@ -23,6 +23,8 @@ import {
 import {
   getMesActual,
   formatMesLabel,
+  getBimestreDeMes,
+  formatBimestreLabel,
   shiftMes,
   getConfigMesProveedor,
   normalizeProveedorId,
@@ -181,7 +183,43 @@ export default function ConfiguracionMensualView({
     setErrors([]);
     setWarnings([]);
     setSuccessMsg(
-      `Se cargó la plantilla estándar de ${formatMesLabel(mes)} (5 bloques). Revisá las fechas y guardá.`
+      `Se cargó la plantilla oficial de umbrales de ${formatMesLabel(mes)} (4 bloques: 01-07, 08-15, 16-22, 23-fin). Revisá las fechas y guardá.`
+    );
+  };
+
+  /**
+   * Renueva / guarda de una sola vez los 2 meses del bimestre activo (ej. Noviembre + Diciembre)
+   * con la tabla oficial de 4 umbrales de emisión de Aero (Cuenta Corriente).
+   */
+  const handleRenovarBimestreAero = () => {
+    const [m1, m2] = getBimestreDeMes(mes);
+    const b1 = buildBloquesMes(m1);
+    const b2 = buildBloquesMes(m2);
+
+    const others = configMensual.filter(
+      (c) =>
+        !(
+          (c.mes === m1 || c.mes === m2) &&
+          normalizeProveedorId(c.proveedorId) === pidActual
+        )
+    );
+
+    const updated = [
+      ...others,
+      { mes: m1, proveedorId: pidActual, bloques: b1 },
+      { mes: m2, proveedorId: pidActual, bloques: b2 }
+    ].sort((a, b) =>
+      a.mes === b.mes
+        ? String(a.proveedorId || '').localeCompare(String(b.proveedorId || ''))
+        : String(a.mes || '').localeCompare(String(b.mes || ''))
+    );
+
+    if (onSaveConfig) onSaveConfig(updated);
+    setBloques(mes === m2 ? b2 : b1);
+    setErrors([]);
+    setWarnings([]);
+    setSuccessMsg(
+      `Se renovó el bimestre completo (${formatBimestreLabel(mes)}) para ${proveedorActivo} con los 4 umbrales oficiales (01-07, 08-15, 16-22, 23-fin).`
     );
   };
 
@@ -320,6 +358,9 @@ export default function ConfiguracionMensualView({
 
   const diasSinCobertura = validacion.diasSinCobertura || [];
   const diasCubiertos = ultimoDia - diasSinCobertura.length;
+  const [mesBim1, mesBim2] = getBimestreDeMes(mes);
+  const cfgBim1 = getConfigMesProveedor(configMensual, pidActual, mesBim1);
+  const cfgBim2 = getConfigMesProveedor(configMensual, pidActual, mesBim2);
   const advertenciasVisibles = useMemo(
     () => [...new Set([...(warnings || []), ...(validacion.warnings || [])])],
     [warnings, validacion.warnings]
@@ -338,19 +379,125 @@ export default function ConfiguracionMensualView({
           }}
         >
           <CalendarClock size={15} />
-          Calendario de Pagos del Proveedor (BCP)
+          Umbrales de Vencimiento Aéreos (Aero Cuenta Corriente · Renovación cada 2 Meses)
         </div>
       </div>
 
       {/* Ayuda del módulo */}
       <div className="panel-inset" style={{ display: 'flex', gap: '12px', marginBottom: '18px' }}>
         <Info size={18} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
-        <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-          Cargá los <strong>bloques de fechas de emisión</strong> que define cada proveedor y su{' '}
-          <strong>fecha límite de pago</strong>. El sistema agrupa todo lo emitido en cada rango y
-          lo liquida en la fecha indicada. Podés generar el mes completo con una regla, copiarlo a
-          otro mes o aplicarlo a todos los proveedores.
-        </p>
+        <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
+          <div>
+            <strong>Aero (#TurismoConfiable · Vencimiento Aéreos):</strong> define los{' '}
+            <strong>umbrales de fechas de emisión</strong> (01 al 07, 08 al 15, 16 al 22 y 23 al fin de mes) y su{' '}
+            <strong>fecha de vencimiento de pago</strong>. Esta configuración{' '}
+            <strong style={{ color: 'var(--neon-cyan)' }}>se renueva cada 2 meses (bimestralmente)</strong>.
+          </div>
+          <div style={{ marginTop: '4px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            *Estas fechas aplican únicamente para clientes con <strong>cuenta corriente</strong>. Se cobrarán intereses para pagos{' '}
+            <strong>fuera de término</strong> tanto para liquidaciones en pesos como en dólares.
+          </div>
+        </div>
+      </div>
+
+      {/* Tarjeta Bimestral: Vista de los 2 meses juntos (Renovación cada 2 meses) */}
+      <div className="card" style={{ marginBottom: '18px' }}>
+        <div className="card-header">
+          <div className="card-title-group">
+            <div className="card-icon">
+              <CalendarDays size={18} />
+            </div>
+            <div>
+              <h3 className="card-title">
+                Vigencia Bimestral (Cada 2 Meses) · {formatBimestreLabel(mes)} · {proveedorActivo}
+              </h3>
+              <p className="card-subtitle">
+                Vista completa de los 2 meses del bimestre activo (Emisión → Vencimiento)
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button className="btn btn-primary btn-sm" onClick={handleRenovarBimestreAero}>
+              <CalendarDays size={14} />
+              <span>Renovar Bimestre Oficial ({formatBimestreLabel(mes)})</span>
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '14px' }}>
+          {[
+            { m: mesBim1, cfg: cfgBim1 },
+            { m: mesBim2, cfg: cfgBim2 }
+          ].map(({ m, cfg }) => {
+            const esMesSeleccionado = m === mes;
+            const listaBloques = cfg?.bloques?.length ? cfg.bloques : buildBloquesMes(m);
+            const estaGuardado = Boolean(cfg?.bloques?.length);
+            return (
+              <div
+                key={m}
+                onClick={() => setMes(m)}
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: 'var(--radius-md)',
+                  background: esMesSeleccionado ? 'var(--bg-subtle)' : 'rgba(15, 23, 42, 0.45)',
+                  border: `1px solid ${esMesSeleccionado ? 'var(--primary)' : 'var(--border)'}`,
+                  cursor: 'pointer'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <strong style={{ fontSize: '0.92rem', color: 'var(--text-main)' }}>
+                    {formatMesLabel(m).toUpperCase()}
+                  </strong>
+                  <span className={`badge ${estaGuardado ? 'badge-success' : 'badge-warning'}`}>
+                    {estaGuardado ? 'Configurado' : 'Plantilla sugerida'}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    paddingBottom: '6px',
+                    marginBottom: '6px',
+                    borderBottom: '1px solid var(--border)',
+                    fontSize: '0.73rem',
+                    fontWeight: 700,
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  <span>Emisión</span>
+                  <span style={{ textAlign: 'right' }}>Vencimiento</span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  {listaBloques.map((b, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontSize: '0.82rem',
+                        color: 'var(--text-secondary)'
+                      }}
+                    >
+                      <span>
+                        <strong>
+                          {String(b.desde).padStart(2, '0')} al {String(b.hasta).padStart(2, '0')}
+                        </strong>{' '}
+                        {formatMesLabel(m).split(' ')[0]}
+                      </span>
+                      <strong className="mono" style={{ color: 'var(--neon-cyan)' }}>
+                        {b.fechaPago ? formatFechaLarga(b.fechaPago) : '—'}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Selector de mes y proveedor */}
@@ -497,14 +644,16 @@ export default function ConfiguracionMensualView({
         <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button className="btn btn-secondary btn-sm" onClick={handlePlantillaEstandar}>
             <CalendarDays size={14} />
-            <span>Usar plantilla estándar (5 bloques)</span>
+            <span>Usar umbrales oficiales Aero (4 bloques: 01-07, 08-15, 16-22, 23-fin)</span>
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={handleRenovarBimestreAero}>
+            <CalendarDays size={14} />
+            <span>Renovar los 2 meses del bimestre ({formatBimestreLabel(mes)})</span>
           </button>
         </div>
 
         <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '10px 0 0' }}>
-          Ejemplo: bloques de 5 días y pago el día 20 → 01-05, 06-10, 11-15… todos con
-          vencimiento el 20. Si el día de pago no existe en el mes, se usa el último día. La
-          plantilla estándar usa 5 bloques y paga los dos últimos al mes siguiente.
+          Umbrales oficiales Aero (renovación cada 2 meses): 01 al 07 → vence el 13/14 · 08 al 15 → vence el 19/21 · 16 al 22 → vence el 27/30 · 23 al fin de mes → vence el 04/07 del mes siguiente.
         </p>
       </div>
 
