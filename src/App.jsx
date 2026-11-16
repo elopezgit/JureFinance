@@ -83,8 +83,12 @@ export default function App() {
     return 'light';
   });
 
+  const themeTouchedRef = useRef(false);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    // Sólo persistimos cuando el usuario eligió un tema; si no, seguimos al
+    // sistema operativo aunque cambie de claro a oscuro con el tiempo.
+    if (!themeTouchedRef.current) return;
     try {
       localStorage.setItem(STORAGE_KEY_THEME, theme);
     } catch (e) {
@@ -522,7 +526,10 @@ export default function App() {
           onSyncDrive={() => performDriveSync(false)}
           isSyncingDrive={isSyncingDrive}
           theme={theme}
-          onToggleTheme={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
+          onToggleTheme={() => {
+            themeTouchedRef.current = true;
+            setTheme((t) => (t === 'light' ? 'dark' : 'light'));
+          }}
         />
 
         {/* Notificación de cambios detectados en Google Drive */}

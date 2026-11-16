@@ -55,6 +55,9 @@ src/
     ttoService.js          # reglas de fechas de pago de los TTOO
     calendarioService.js   # obligaciones, pagos y liquidaciones por bloque
     driveService.js        # puente con Google Drive (Apps Script)
+  config/storage.js        # claves de localStorage compartidas (una sola fuente)
+  hooks/useModalA11y.js    # Escape, foco y aria-modal para los diálogos
+  components/Common/       # ConfirmDialog reutilizable
   data/initialData.js      # proveedores y datos de ejemplo
 scripts/probarModelo.mjs   # pruebas del modelo y de la agenda (npm run test:modelo)
 google-apps-script/        # Web App (conector v3.1) que habla con Drive
@@ -112,5 +115,8 @@ que lo componen.
 
 Roadmap en [docs/FLUJO_CLIENTE.md](docs/FLUJO_CLIENTE.md) §6. El cotizador por
 pasos con precio de venta y costo real de compra está implementado, junto con el
-resumen interno imprimible. Pendientes principales: unificación de claves de
-almacenamiento y tests automáticos de `ttoService` / `calendarioService`.
+resumen interno imprimible, el módulo de cobros a clientes, las liquidaciones
+por bloque y las confirmaciones accesibles para borrados. Las claves de
+almacenamiento están unificadas en `src/config/storage.js` (v2). Quedan como
+mejoras pendientes un tarifario por ruta y una suite de tests unitarios con
+Vitest para `ttoService` / `calendarioService`.

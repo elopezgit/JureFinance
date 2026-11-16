@@ -41,22 +41,17 @@ export default function StepResumenWizard({
       : 0;
   const ventaSugerida = neto * (1 + (Number(markupGlobalPct) || 0) / 100);
 
+  // El % es sólo una referencia: el precio final sale de los servicios cargados
+  // desde el presupuesto del proveedor (o del precio manual), nunca se recalcula.
   const cambiarMarkup = (valor) => {
     const pct = Number(String(valor).replace(',', '.')) || 0;
     setMarkupGlobalPct?.(pct);
-    if (modoVenta === 'porcentaje') {
-      // El precio final se deriva del costo real + markup y se guarda como
-      // precio de venta del paquete para que resumen y persistencia coincidan.
-      setPrecioVentaPaquete?.(Number((neto * (1 + pct / 100)).toFixed(2)));
-    }
   };
 
   const cambiarModo = (modo) => {
     setModoVenta(modo);
     if (modo === 'manual' && !(Number(precioVentaPaquete) > 0)) {
-      setPrecioVentaPaquete?.(Number(ventaSugerida.toFixed(2)));
-    } else if (modo === 'porcentaje') {
-      setPrecioVentaPaquete?.(Number((neto * (1 + (Number(markupGlobalPct) || 0) / 100)).toFixed(2)));
+      setPrecioVentaPaquete?.(Number((ventaSugerida || venta).toFixed(2)));
     }
   };
 

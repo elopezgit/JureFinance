@@ -293,10 +293,9 @@ Paso 3  Resumen: venta, costo real, ganancia, margen y vista interna imprimible
    que autocomplete.
 2. **Precio de venta a mano.** Se transcribe el total del PDF externo por
    servicio; no hay integración automática con la herramienta del proveedor.
-3. **Consistencia de datos:**
-   - Claves de almacenamiento duplicadas: `STORAGE_KEY_QUOTES` (`App.jsx`) y
-     `STORAGE_KEY_DB` (`driveService.js`) valen lo mismo
-     (`jurefinance_quotes_v1`).
+3. **Consistencia de datos:** ✅ resuelta. Las claves viven en
+   `src/config/storage.js` y `App.jsx` / `driveService.js` importan la misma
+   constante (`jurefinance_quotes_v2`, ya migrada desde `v1`).
 4. **Sincronización last-write-wins**, sin resolución de conflictos.
 5. **Tests**: sólo hay pruebas manuales del modelo (`scripts/probarModelo.mjs`);
    falta suite automatizada para `ttoService` y `calendarioService`.
@@ -347,8 +346,8 @@ Implementación:
 - **Fase 3 — Cotizador de números reales.** ✅ implementado: precio de venta al
   cliente por servicio, ofertas de compra de varios proveedores, costo real,
   ganancia y resumen interno imprimible.
-- **Fase 4 — Consistencia de datos.** Unificar claves, defaults únicos,
-  diccionario de estados.
+- **Fase 4 — Consistencia de datos.** ✅ claves unificadas en
+  `src/config/storage.js`; defaults y diccionario de estados, pendientes.
 - **Fase 5 — Arquitectura.** Extraer hooks y dividir componentes grandes
   (`CotizadorWizard.jsx` todavía concentra estado y orquestación).
 - **Fase 6 — Sincronización robusta.** Versión/timestamp por registro y merge.
