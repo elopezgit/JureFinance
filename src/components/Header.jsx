@@ -1,6 +1,6 @@
 // Header.jsx - Barra superior futurista con estilo Cyber-Fintech
 import React from 'react';
-import { Plus, AlertCircle, RefreshCw, Search, Bell, Settings, User, Sun, Moon } from 'lucide-react';
+import { Plus, AlertCircle, RefreshCw, User, Sun, Moon } from 'lucide-react';
 
 export default function Header({
   activeTab,
@@ -85,27 +85,6 @@ export default function Header({
         <div style={{ minWidth: 0 }}>
           <div className="header-breadcrumb">{info.breadcrumb}</div>
           <h1 className="header-title">{info.title}</h1>
-        </div>
-      </div>
-
-      {/* Barra de búsqueda central en pastilla / pill */}
-      <div className="header-search-pill" style={{ display: 'none' /* Oculto en móviles, visible en desktop */ }}>
-        <div className="input-wrapper" style={{ position: 'relative' }}>
-          <span className="input-prefix" style={{ left: '14px', color: 'var(--neon-cyan)' }}>
-            <Search size={15} />
-          </span>
-          <input
-            type="text"
-            className="input-field input-with-prefix"
-            placeholder="Buscar en JureFinance..."
-            style={{
-              height: '38px',
-              borderRadius: 'var(--radius-full)',
-              background: 'rgba(17, 10, 40, 0.7)',
-              fontSize: '0.84rem',
-              borderColor: 'rgba(139, 92, 246, 0.25)'
-            }}
-          />
         </div>
       </div>
 

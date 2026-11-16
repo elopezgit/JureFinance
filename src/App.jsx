@@ -1,5 +1,5 @@
 // App.jsx - Main Application Controller for JureFinance
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import './App.css';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -12,9 +12,10 @@ import DriveConfigModal from './components/Configuracion/DriveConfigModal';
 import ConfiguracionMensualView from './components/Configuracion/ConfiguracionMensualView';
 import CalendarioPagosView from './components/Cobranzas/CalendarioPagosView';
 import CalendarioCobrosView from './components/Cobranzas/CalendarioCobrosView';
+import ConfirmDialog from './components/Common/ConfirmDialog';
+import { STORAGE_KEY_QUOTES, STORAGE_KEY_OPERADORES, STORAGE_KEY_COBROS_CLIENTES, STORAGE_KEY_THEME } from './config/storage';
 
-import { INITIAL_COTIZACIONES, INITIAL_OPERADORES, INITIAL_CONFIGURACION_MENSUAL, buildConfiguracionMensual } from './data/initialData';
-import { mergeDemoVuelos, contarDemoFaltantes } from './data/demoVuelos';
+import { INITIAL_COTIZACIONES, INITIAL_OPERADORES, INITIAL_CONFIGURACION_MENSUAL } from './data/initialData';
 import {
   getDriveConfig,
   saveDatabaseToDrive,
@@ -24,14 +25,15 @@ import {
   getStoredPagosTTOO,
   savePagosTTOOLocal,
   getStoredPagosManuales,
-  savePagosManualesLocal
+  savePagosManualesLocal,
+  getStoredPagosClientes,
+  savePagosClientesLocal
 } from './services/driveService';
 import { construirAgendaPagos, hoyISO } from './services/calendarioService';
 import { normalizarServicios } from './services/serviciosService';
-import { getMesActual, getBimestreDeMes } from './services/ttoService';
 
-const STORAGE_KEY_QUOTES = 'jurefinance_quotes_v2';
-const STORAGE_KEY_OPERADORES = 'jurefinance_operadores_v2';
+
+// Las claves viven en config/storage.js para que App y driveService no divergan.
 
 // Cotización en blanco: el cotizador debe nacer vacío (sin datos de ejemplo)
 // Los servicios se modelan como LÍNEAS por proveedor (ver serviciosService).
@@ -70,10 +72,13 @@ export default function App() {
   // Tema visual: claro por defecto, con opción manual persistida
   const [theme, setTheme] = useState(() => {
     try {
-      const saved = localStorage.getItem('jurefinance_theme');
+      const saved = localStorage.getItem(STORAGE_KEY_THEME);
       if (saved === 'light' || saved === 'dark') return saved;
     } catch (e) {
       console.error('Error loading theme', e);
+    }
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
     }
     return 'light';
   });
@@ -81,11 +86,45 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try {
-      localStorage.setItem('jurefinance_theme', theme);
+      localStorage.setItem(STORAGE_KEY_THEME, theme);
     } catch (e) {
       console.error('Error saving theme', e);
     }
   }, [theme]);
+
+  // Escape cierra el modal más reciente, incluidos los diálogos antiguos que
+  // aún no usan el hook useModalA11y directamente.
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return;
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      const ultimo = backdrops[backdrops.length - 1];
+      if (!ultimo) return;
+      const cerrar = ultimo.querySelector('.modal-close-btn, [aria-label^="Cerrar"]');
+      if (cerrar) {
+        event.preventDefault();
+        cerrar.click();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // Mejora: abrir el calendario nativo al hacer clic en campos de fecha
+  useEffect(() => {
+    const handler = (e) => {
+      const el = e.target;
+      if (el && el.tagName === 'INPUT' && (el.type === 'date' || el.type === 'time')) {
+        try {
+          el.showPicker?.();
+        } catch {
+          // Algunos navegadores no soportan showPicker
+        }
+      }
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
 
   // Quotes state with persistence
   const [cotizaciones, setCotizaciones] = useState(() => {
@@ -104,6 +143,17 @@ export default function App() {
   // Calendario de Pagos a TTOOs: pagos realizados (overlay) y pagos manuales
   const [pagosTTOO, setPagosTTOO] = useState(() => getStoredPagosTTOO());
   const [pagosTTOOManuales, setPagosTTOOManuales] = useState(() => getStoredPagosManuales());
+
+  // Cobros del cliente (pagos parciales, solo por cliente)
+  const [pagosClientes, setPagosClientes] = useState(() => {
+    const stored = getStoredPagosClientes();
+    if (Array.isArray(stored) && stored.length > 0) return stored;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_COBROS_CLIENTES);
+      if (saved) return JSON.parse(saved);
+    } catch (e) { console.error('Error loading client payments', e); }
+    return [];
+  });
 
   // Configuración Mensual de TTOs (bloques de emisión → fecha de pago)
   const [configMensual, setConfigMensual] = useState(() => {
@@ -128,12 +178,38 @@ export default function App() {
   });
 
   // Selected client for Drive view
-  const [selectedClientForDrive, setSelectedClientForDrive] = useState('PELAO DAUD');
+  // Se inicializa con el primer cliente real de las cotizaciones guardadas,
+  // nunca con un nombre de ejemplo quemado en el código.
+  const [selectedClientForDrive, setSelectedClientForDrive] = useState(() => {
+    const guardadas = Array.isArray(cotizaciones) ? cotizaciones : [];
+    return guardadas.find((q) => q.cliente)?.cliente || '';
+  });
 
   // Google Drive Config & Sync
   const [driveConfig, setDriveConfig] = useState(getDriveConfig());
   const [isSyncingDrive, setIsSyncingDrive] = useState(false);
+  const [syncError, setSyncError] = useState('');
   const [remoteChangeAlert, setRemoteChangeAlert] = useState(null);
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
+  const showToast = useCallback((message, type = 'info') => {
+    setToast({ message, type, id: Date.now() });
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3200);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      const detail = e?.detail || {};
+      if (detail.message) showToast(detail.message, detail.type || 'info');
+    };
+    window.addEventListener('jf:toast', handler);
+    return () => window.removeEventListener('jf:toast', handler);
+  }, [showToast]);
 
   // Background Bidirectional Polling & Window Focus sync
   const syncInFlightRef = useRef(false);
@@ -146,10 +222,13 @@ export default function App() {
     try {
       const res = await syncBidirectionalWithDrive();
       setDriveConfig(getDriveConfig());
+      setSyncError('');
 
       if (res.hasChanges) {
         setRemoteChangeAlert(res.message);
         setTimeout(() => setRemoteChangeAlert(null), 6000);
+      } else {
+        showToast('Sincronización completada', 'success');
       }
 
       // Si vinieron cotizaciones actualizadas de la base de datos de Drive
@@ -172,13 +251,19 @@ export default function App() {
         setPagosTTOOManuales(res.db.pagosTTOOManuales);
         savePagosManualesLocal(res.db.pagosTTOOManuales);
       }
+      if (res.db && Array.isArray(res.db.pagosClientes)) {
+        setPagosClientes(res.db.pagosClientes);
+        savePagosClientesLocal(res.db.pagosClientes);
+        try { localStorage.setItem(STORAGE_KEY_COBROS_CLIENTES, JSON.stringify(res.db.pagosClientes)); } catch { /* caché no disponible */ }
+      }
     } catch (err) {
       console.warn('Sync error:', err);
+      setSyncError(err?.message || 'No se pudo sincronizar con Google Drive.');
     } finally {
       syncInFlightRef.current = false;
       if (!isSilent) setIsSyncingDrive(false);
     }
-  }, []);
+  }, [showToast]);
 
   // Periodic Auto-Sync Timer + Window Focus
   // Con el conector v3.1 (soporte de precalculado) el sondeo es barato: cada 60 s.
@@ -228,6 +313,7 @@ export default function App() {
       configuracionMensual: configMensual,
       pagosTTOO,
       pagosTTOOManuales,
+      pagosClientes,
       ...overrides
     });
   };
@@ -291,53 +377,39 @@ export default function App() {
     persistPagosTTOO((pagosTTOO || []).filter((r) => r.id !== pagoId));
   };
 
-  const handleCrearPagoManual = (manual) => {
-    persistPagosManuales([...(pagosTTOOManuales || []), manual]);
-  };
-
   const handleEliminarPagoManual = (manualId) => {
     persistPagosManuales((pagosTTOOManuales || []).filter((m) => m.id !== manualId));
   };
 
-  // Carga los 10 vuelos de ejemplo (ya emitidos en distintos bloques de pago)
-  // sin pisar ni duplicar los datos existentes. Devuelve cuántos agregó.
-  const handleCargarDemoVuelos = () => {
-    const faltantes = contarDemoFaltantes(cotizaciones);
-    const cotizacionesActualizadas = mergeDemoVuelos(cotizaciones);
-
-    // Asegurar la Configuración Bimestral del bimestre en curso (para que las fechas de
-    // pago de los vuelos de ejemplo se calculen según los umbrales de Aero).
-    const mesActual = getMesActual();
-    const mesesBimestre = getBimestreDeMes(mesActual);
-    const faltanConfig = buildConfiguracionMensual(['2026-11', '2026-12', ...mesesBimestre]).filter(
-      (cfg) =>
-        !(configMensual || []).some(
-          (c) =>
-            c.mes === cfg.mes &&
-            String(c.proveedorId).toLowerCase() === String(cfg.proveedorId).toLowerCase()
-        )
-    );
-    const configActualizada =
-      faltanConfig.length > 0 ? [...(configMensual || []), ...faltanConfig] : configMensual;
-
-    setCotizaciones(cotizacionesActualizadas);
-    setConfigMensual(configActualizada);
+  const persistPagosClientes = (updated) => {
+    const siguiente = typeof updated === 'function' ? updated(pagosClientes || []) : updated;
+    setPagosClientes(siguiente);
     try {
-      localStorage.setItem(STORAGE_KEY_QUOTES, JSON.stringify(cotizacionesActualizadas));
-      saveMonthlyConfigLocal(configActualizada);
-      persistDb({
-        cotizaciones: cotizacionesActualizadas,
-        configuracionMensual: configActualizada
-      });
+      localStorage.setItem(STORAGE_KEY_COBROS_CLIENTES, JSON.stringify(siguiente));
+      savePagosClientesLocal(siguiente);
+      persistDb({ pagosClientes: siguiente });
     } catch (e) {
-      console.error('Error cargando los vuelos de ejemplo', e);
+      console.error('Error saving client payments', e);
     }
+  };
 
-    return faltantes;
+  const handleRegistrarCobroCliente = (pago) => {
+    persistPagosClientes([...(pagosClientes || []), pago]);
+  };
+
+  // Un comprobante puede generar varias líneas de pago (por servicio y moneda).
+  // Se guardan todas juntas para mantener el historial agrupado por operación.
+  const handleRegistrarCobrosClientesLote = (pagos = []) => {
+    if (!Array.isArray(pagos) || pagos.length === 0) return;
+    persistPagosClientes([...(pagosClientes || []), ...pagos]);
+  };
+
+  const handleEliminarCobroCliente = (pagoId) => {
+    persistPagosClientes((actuales) => actuales.filter((p) => p.id !== pagoId));
   };
 
   // Calculate upcoming urgent TTOO deadlines count (< 3 days)
-  const calculateUrgentesCount = () => {
+  const urgentesCount = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     let count = 0;
@@ -355,19 +427,17 @@ export default function App() {
     });
 
     return count;
-  };
-
-  const urgentesCount = calculateUrgentesCount();
+  }, [cotizaciones]);
 
   // Vencimientos de pago a proveedores ya vencidos (badge del menú)
-  const pagosVencidosCount = construirAgendaPagos({
+  const pagosVencidosCount = useMemo(() => construirAgendaPagos({
     cotizaciones,
     configMensual,
     pagosTTOOManuales,
     pagosTTOO
   }).filter(
     (p) => p.estado !== 'Pagado' && p.fechaVencimiento && p.fechaVencimiento < hoyISO()
-  ).length;
+  ).length, [cotizaciones, configMensual, pagosTTOOManuales, pagosTTOO]);
 
   // Handlers
   const handleSaveQuote = (savedQuote) => {
@@ -388,14 +458,23 @@ export default function App() {
     setActiveTab('cotizador');
   };
 
-  const handleDeleteQuote = (quoteId) => {
-    if (window.confirm('¿Seguro que deseas eliminar esta cotización?')) {
-      const updated = cotizaciones.filter((q) => q.id !== quoteId);
-      persistQuotes(updated);
-      if (editingQuote?.id === quoteId) {
-        setEditingQuote(null);
-      }
+  const [quoteToDelete, setQuoteToDelete] = useState(null);
+
+  const confirmarEliminarQuote = () => {
+    if (!quoteToDelete) return;
+    const updated = cotizaciones.filter((q) => q.id !== quoteToDelete.id);
+    persistQuotes(updated);
+    if (editingQuote?.id === quoteToDelete.id) {
+      setEditingQuote(buildEmptyQuote());
     }
+    setQuoteToDelete(null);
+  };
+
+  const handleDeleteQuote = (quoteOrId) => {
+    const quote = typeof quoteOrId === 'string'
+      ? cotizaciones.find((q) => q.id === quoteOrId)
+      : quoteOrId;
+    if (quote) setQuoteToDelete(quote);
   };
 
   const handleDuplicateQuote = (quoteToDup) => {
@@ -448,24 +527,8 @@ export default function App() {
 
         {/* Notificación de cambios detectados en Google Drive */}
         {remoteChangeAlert && (
-          <div
-            style={{
-              margin: '16px 34px 0',
-              padding: '12px 16px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--success-bg)',
-              border: '1px solid var(--success-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-              color: 'var(--text-main)',
-              fontSize: '0.86rem',
-              boxShadow: 'var(--shadow-sm)',
-              animation: 'fadeIn 0.3s ease'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="jf-alert jf-alert--success" role="status">
+            <div className="jf-alert-content">
               <span className="badge badge-success">Actualización en vivo</span>
               <span>{remoteChangeAlert}</span>
             </div>
@@ -473,6 +536,7 @@ export default function App() {
               onClick={() => setRemoteChangeAlert(null)}
               className="modal-close-btn"
               title="Cerrar"
+              aria-label="Cerrar aviso"
             >
               ✕
             </button>
@@ -480,35 +544,25 @@ export default function App() {
         )}
 
         {/* Aviso de estado de conexión con Google Drive */}
-        {driveConfig?.lastSyncOk === false && driveConfig?.lastSyncMessage && (
-          <div
-            style={{
-              margin: '16px 34px 0',
-              padding: '12px 16px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--warning-bg)',
-              border: '1px solid var(--warning-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-              color: 'var(--warning)',
-              fontSize: '0.84rem',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {((driveConfig?.lastSyncOk === false && driveConfig?.lastSyncMessage) || syncError) && (
+          <div className="jf-alert jf-alert--warning" role="alert">
+            <div className="jf-alert-content">
               <span>⚠️</span>
-              <span>{driveConfig.lastSyncMessage}</span>
+              <span>{syncError || driveConfig.lastSyncMessage}</span>
             </div>
             <button
               onClick={() => performDriveSync(false)}
               disabled={isSyncingDrive}
               className="btn btn-secondary btn-sm"
-              style={{ whiteSpace: 'nowrap' }}
             >
               {isSyncingDrive ? 'Reintentando…' : 'Reintentar'}
             </button>
+          </div>
+        )}
+
+        {toast && (
+          <div className={`jf-toast ${toast.type === 'success' ? 'jf-toast--success' : toast.type === 'error' ? 'jf-toast--error' : ''}`} role="status">
+            {toast.message}
           </div>
         )}
 
@@ -563,20 +617,25 @@ export default function App() {
             <CalendarioPagosView
               cotizaciones={cotizaciones}
               configMensual={configMensual}
-              operadoresList={operadores}
               pagosTTOO={pagosTTOO}
               pagosTTOOManuales={pagosTTOOManuales}
+              pagosClientes={pagosClientes}
               onRegistrarPago={handleRegistrarPago}
               onRegistrarPagosLote={handleRegistrarPagosLote}
               onEliminarPago={handleEliminarPago}
-              onCrearPagoManual={handleCrearPagoManual}
               onEliminarPagoManual={handleEliminarPagoManual}
-              onCargarDemo={handleCargarDemoVuelos}
             />
           )}
 
           {activeTab === 'cobros' && (
-            <CalendarioCobrosView cotizaciones={cotizaciones} onIrACotizador={handleNewQuote} />
+            <CalendarioCobrosView
+              cotizaciones={cotizaciones}
+              onIrACotizador={handleNewQuote}
+              pagosClientes={pagosClientes}
+              onRegistrarCobroCliente={handleRegistrarCobroCliente}
+              onRegistrarCobrosClientesLote={handleRegistrarCobrosClientesLote}
+              onEliminarCobroCliente={handleEliminarCobroCliente}
+            />
           )}
 
           {activeTab === 'configMensual' && (
@@ -595,6 +654,16 @@ export default function App() {
           )}
         </main>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(quoteToDelete)}
+        title="Eliminar cotización"
+        message={`¿Eliminar la cotización de ${quoteToDelete?.cliente || 'este cliente'}?`}
+        warning="La cotización se borrará de la caché local y de Google Drive. Los pagos ya registrados no se eliminan."
+        confirmLabel="Eliminar cotización"
+        onConfirm={confirmarEliminarQuote}
+        onCancel={() => setQuoteToDelete(null)}
+      />
     </div>
   );
 }

@@ -3,9 +3,9 @@
 // El presupuesto que recibe el cliente se arma fuera de la app con el constructor
 // de PDF del proveedor (ej. Azabache). Este documento es de uso interno de JureTravel:
 // muestra los costos guardados por separado de cada proveedor (Aero vs Azabache),
-// las fechas de pago (24-48 hs post-emisión vs Grilla 1-5 -> día 20), el precio final
+// las fechas de pago (BCP vs 7 días antes del viaje), el precio final
 // al cliente y la ganancia real.
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   X,
   Printer,
@@ -36,8 +36,9 @@ import {
   totalGananciaItems,
   margenVentaItems
 } from '../../services/serviciosService';
-import { getBloqueBCP, getFechaPagoAereoEmitido } from '../../services/ttoService';
+import { getBloqueBCP } from '../../services/ttoService';
 import { formatFechaLarga } from '../../services/calendarioService';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 const ESTILO_POR_TIPO = {
   aereo: { Icono: Plane, fondo: '#dbeafe', color: '#1d4ed8' },
@@ -54,6 +55,9 @@ const formato = (moneda, valor) =>
   })}`;
 
 export default function QuotePreviewModal({ quote, configMensual = [], onClose }) {
+  const rootRef = useRef(null);
+  useModalA11y(Boolean(quote), onClose, rootRef);
+
   if (!quote) return null;
 
   const { destino, fechaViajeInicio, fechaViajeFin, fechaCotizacion, pax, pasajeros, moneda, notas } = quote;
@@ -77,26 +81,25 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
     if (!compra) return 'Sin proveedor';
     if (compra.vencimientoTTOO) return `Pago ${formatFechaLarga(compra.vencimientoTTOO)} (manual)`;
     if (item.tipo === 'aereo') {
-      if (!item.fechaEmision) return 'Pago a 24-48 hs post-emisión confirmada';
-      if (item.reglaVencimiento !== 'bcp') {
-        const horas = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
-        return `Pago ${horas} hs post-emisión: ${formatFechaLarga(getFechaPagoAereoEmitido(item.fechaEmision, horas))}`;
-      }
+      if (!item.fechaEmision) return 'Sin fecha de emisión';
       const b = getBloqueBCP(configMensual, compra.proveedor || 'Aero', item.fechaEmision);
-      return b ? `Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}` : 'Sin bloque';
+      return b ? `Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}` : 'Sin bloque BCP';
     }
-    const fRef = item.fechaReserva || fechaCotizacion || '';
-    if (!fRef) return 'Según grilla mensual (1-5 → día 20)';
-    const b = getBloqueBCP(configMensual, compra.proveedor || 'Azabache', fRef);
-    return b ? `Reservado Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}` : 'Según grilla mensual';
+    // Terrestres: pagado 7 días antes del viaje.
+    return 'Pago 7 días antes del viaje';
   };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
+        ref={rootRef}
         className="modal-content"
-        style={{ maxWidth: '940px', background: '#ffffff', color: '#111827' }}
+        style={{ maxWidth: '940px', background: 'var(--bg-surface)', color: 'var(--text-main)' }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Resumen interno de números de la cotización"
+        tabIndex={-1}
       >
         {/* Barra superior del modal (oculta al imprimir) */}
         <div className="modal-header">
@@ -129,7 +132,7 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
               <Printer size={15} />
               <span>Imprimir / Guardar PDF</span>
             </button>
-            <button onClick={onClose} className="modal-close-btn">
+            <button onClick={onClose} className="modal-close-btn" aria-label="Cerrar resumen" title="Cerrar">
               <X size={20} />
             </button>
           </div>

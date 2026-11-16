@@ -231,22 +231,13 @@ try {
     )
   }
 
-  // Módulo BCP: reporte de flujo de caja + carga de ejemplo.
+  // Módulo BCP: reporte de flujo de caja.
   await cdp.clickPorTexto('Calendario de Pagos')
   await dormir(900)
   const pagos = await cdp.texto()
   chequear('abre el reporte de flujo de caja BCP', /flujo de caja por día de vencimiento/i.test(pagos))
   chequear('muestra el total general del período', /total general/i.test(pagos))
   chequear('separa los totales por moneda', /usd/i.test(pagos))
-
-  const excepcionesAntesDemo = cdp.excepciones.length
-  const clickDemo = await cdp.clickPorTexto('cargar ejemplo')
-  await dormir(1500)
-  chequear(
-    'cargar vuelos de ejemplo no rompe',
-    clickDemo && cdp.excepciones.length === excepcionesAntesDemo,
-    cdp.excepciones.join(' | ')
-  )
 
   // Configuración BCP: generar bloques por regla.
   await cdp.clickPorTexto('Configuración Mensual TTOs')

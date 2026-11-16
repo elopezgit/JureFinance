@@ -5,7 +5,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   Wallet,
-  Plus,
   Search,
   Info,
   CalendarClock,
@@ -14,11 +13,12 @@ import {
   CreditCard,
   Building2,
   ArrowDownCircle,
-  Plane,
   Users
 } from 'lucide-react';
 import CalendarioMensual from '../Calendario/CalendarioMensual';
 import FlujoCajaBCP from './FlujoCajaBCP';
+import ConfirmDialog from '../Common/ConfirmDialog';
+import { ventaTotalCotizacion, cobrosPorMes } from '../../services/cobroService';
 import {
   construirAgendaPagos,
   liquidacionesPorProveedorYFecha,
@@ -32,16 +32,15 @@ import {
   nuevoId,
   totalesPorMoneda,
   claveLiquidacion,
-  generarCSVFlujoCaja
+  generarCSVFlujoCaja,
+  cajaPorProveedor
 } from '../../services/calendarioService';
 
 const MEDIOS_PAGO = ['Transferencia', 'Efectivo', 'Tarjeta', 'Cheque', 'Otro'];
-const MONEDAS = ['USD', 'ARS', 'EUR', 'BRL'];
-
 /* -------------------------------------------------------------------------- */
 /* Modal: registrar pago (parcial) sobre una obligación                       */
 /* -------------------------------------------------------------------------- */
-function RegistrarPagoModal({ pago, onClose, onRegistrarPago, onEliminarPago }) {
+function RegistrarPagoModal({ pago, onClose, onRegistrarPago }) {
   const [monto, setMonto] = useState(String(Math.max(pago.saldo, 0).toFixed(2)));
   const [fecha, setFecha] = useState(hoyISO());
   const [medio, setMedio] = useState('Transferencia');
@@ -184,7 +183,7 @@ function RegistrarPagoModal({ pago, onClose, onRegistrarPago, onEliminarPago }) 
                     </div>
                     <button
                       className="btn btn-danger btn-sm btn-icon-only"
-                      onClick={() => onEliminarPago(r.id)}
+                      onClick={() => setPagoAEliminar({ tipo: 'registrado', id: r.id })}
                       title="Eliminar este pago"
                     >
                       <Trash2 size={14} />
@@ -201,151 +200,6 @@ function RegistrarPagoModal({ pago, onClose, onRegistrarPago, onEliminarPago }) 
           <button className="btn btn-primary" onClick={guardar} disabled={!puedeGuardar}>
             <CheckCircle2 size={16} />
             <span>Registrar pago</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Modal: nuevo pago manual a proveedor                                       */
-/* -------------------------------------------------------------------------- */
-function NuevoPagoManualModal({ proveedores, onClose, onCrear }) {
-  const [form, setForm] = useState({
-    proveedor: proveedores[0] || '',
-    concepto: '',
-    monto: '',
-    moneda: 'USD',
-    fechaVencimiento: hoyISO(),
-    cliente: '',
-    notas: ''
-  });
-
-  const set = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
-  const puedeGuardar = form.concepto.trim() && Number(form.monto) > 0;
-
-  const guardar = () => {
-    if (!puedeGuardar) return;
-    onCrear({
-      id: nuevoId('MAN'),
-      proveedor: form.proveedor.trim(),
-      concepto: form.concepto.trim(),
-      monto: Number(form.monto),
-      moneda: form.moneda,
-      fechaVencimiento: form.fechaVencimiento,
-      cliente: form.cliente.trim(),
-      notas: form.notas.trim()
-    });
-    onClose();
-  };
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div
-        className="modal-content"
-        style={{ maxWidth: '600px' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <div className="card-title-group">
-            <div className="card-icon">
-              <Building2 size={18} />
-            </div>
-            <div>
-              <h3 className="card-title">Nuevo pago a proveedor</h3>
-              <p className="card-subtitle">Factura o pago suelto, sin cotización asociada</p>
-            </div>
-          </div>
-          <button className="modal-close-btn" onClick={onClose} title="Cerrar">×</button>
-        </div>
-
-        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label className="form-label">Proveedor</label>
-              <input
-                className="input-field"
-                list="jf-proveedores"
-                placeholder="Aero, Price, Azabache…"
-                value={form.proveedor}
-                onChange={(e) => set('proveedor', e.target.value)}
-              />
-              <datalist id="jf-proveedores">
-                {proveedores.map((p) => (
-                  <option key={p} value={p} />
-                ))}
-              </datalist>
-            </div>
-            <div>
-              <label className="form-label">Cliente / referencia (opcional)</label>
-              <input
-                className="input-field"
-                placeholder="Nombre del cliente"
-                value={form.cliente}
-                onChange={(e) => set('cliente', e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="form-label">Concepto</label>
-            <input
-              className="input-field"
-              placeholder="Ej.: Factura de hotel, servicio extra…"
-              value={form.concepto}
-              onChange={(e) => set('concepto', e.target.value)}
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: '12px' }}>
-            <div>
-              <label className="form-label">Monto</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className="input-field mono"
-                placeholder="0.00"
-                value={form.monto}
-                onChange={(e) => set('monto', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="form-label">Moneda</label>
-              <select className="select-field" value={form.moneda} onChange={(e) => set('moneda', e.target.value)}>
-                {MONEDAS.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="form-label">Vencimiento</label>
-              <input
-                type="date"
-                className="input-field"
-                value={form.fechaVencimiento}
-                onChange={(e) => set('fechaVencimiento', e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="form-label">Notas (opcional)</label>
-            <input
-              className="input-field"
-              placeholder="Observaciones"
-              value={form.notas}
-              onChange={(e) => set('notas', e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-          <button className="btn btn-primary" onClick={guardar} disabled={!puedeGuardar}>
-            <Plus size={16} />
-            <span>Agregar pago</span>
           </button>
         </div>
       </div>
@@ -537,15 +391,13 @@ function RegistrarPagoLiquidacionModal({ liquidacion, onClose, onRegistrarLote }
 export default function CalendarioPagosView({
   cotizaciones = [],
   configMensual = [],
-  operadoresList = [],
+  pagosClientes = [],
   pagosTTOO = [],
   pagosTTOOManuales = [],
   onRegistrarPago,
   onRegistrarPagosLote,
   onEliminarPago,
-  onCrearPagoManual,
-  onEliminarPagoManual,
-  onCargarDemo
+  onEliminarPagoManual
 }) {
   const hoy = hoyISO();
   const [mes, setMes] = useState(mesDeISO(hoy));
@@ -554,24 +406,12 @@ export default function CalendarioPagosView({
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [pagoActivo, setPagoActivo] = useState(null);
-  const [manualAbierto, setManualAbierto] = useState(false);
+  const [pagoAEliminar, setPagoAEliminar] = useState(null);
+  const [pagoDetalle, setPagoDetalle] = useState(null);
   const [vistaActual, setVistaActual] = useState('liquidaciones'); // 'liquidaciones' (BCP) | 'calendario' | 'obligaciones'
   const [liquidacionActiva, setLiquidacionActiva] = useState(null);
   const [verTodosLosMeses, setVerTodosLosMeses] = useState(false);
   const [moneda, setMoneda] = useState('todas');
-  const [demoMsg, setDemoMsg] = useState('');
-
-  // Carga los vuelos de ejemplo (emitidos en distintos bloques de pago BCP)
-  const cargarDemo = () => {
-    if (!onCargarDemo) return;
-    const n = onCargarDemo();
-    setDemoMsg(
-      n > 0
-        ? `Se cargaron ${n} vuelos de ejemplo emitidos en los 5 rangos BCP del mes.`
-        : 'Los vuelos de ejemplo ya estaban cargados.'
-    );
-    window.setTimeout(() => setDemoMsg(''), 6000);
-  };
 
   const agenda = useMemo(
     () => construirAgendaPagos({ cotizaciones, configMensual, pagosTTOOManuales, pagosTTOO }),
@@ -653,12 +493,6 @@ export default function CalendarioPagosView({
     return [...set].sort((a, b) => a.localeCompare(b));
   }, [agenda]);
 
-  const proveedoresSugeridos = useMemo(() => {
-    const base = (operadoresList || []).map((op) => op.nombre).filter(Boolean);
-    const set = new Set([...base, ...proveedores]);
-    return [...set];
-  }, [operadoresList, proveedores]);
-
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return agenda.filter((p) => {
@@ -722,7 +556,7 @@ export default function CalendarioPagosView({
     return diasConPagosDelMes[0]?.fecha || diaSeleccionado;
   }, [pagosPeriodo, diaSeleccionado, monedaCalendario, diasConPagosDelMes]);
 
-  const pagosDelDia = pagosPeriodo
+  const _pagosDelDia = pagosPeriodo
     .filter(
       (p) =>
         p.fechaVencimiento === diaEfectivo &&
@@ -732,6 +566,98 @@ export default function CalendarioPagosView({
 
   const sinFecha = pagosPeriodo.filter((p) => !p.fechaVencimiento);
 
+  const cajasProveedores = useMemo(
+    () => cajaPorProveedor(pagosPeriodo),
+    [pagosPeriodo]
+  );
+
+  const clientesConSaldoCobro = useMemo(() => {
+    const ventas = new Map();
+    (cotizaciones || []).forEach((q) => {
+      const total = ventaTotalCotizacion(q);
+      const cli = q.cliente || 'Sin cliente';
+      ventas.set(cli, (ventas.get(cli) || 0) + (Number(total) || 0));
+    });
+    const cobrado = new Map();
+    (pagosClientes || []).forEach((p) => {
+      const cli = p.cliente || 'Sin cliente';
+      cobrado.set(cli, (cobrado.get(cli) || 0) + (Number(p.monto) || 0));
+    });
+    const set = new Set();
+    ventas.forEach((v, cli) => {
+      const c = cobrado.get(cli) || 0;
+      if (v - c > 0.005) set.add(cli);
+    });
+    return set;
+  }, [cotizaciones, pagosClientes]);
+
+  const alertasRiesgo = useMemo(() => {
+    const hoy = hoyISO();
+    return (pagosPeriodo || []).filter(
+      (p) =>
+        p.estado !== 'Pagado' &&
+        p.fechaVencimiento &&
+        p.fechaVencimiento < hoy &&
+        clientesConSaldoCobro.has(p.cliente)
+    );
+  }, [pagosPeriodo, clientesConSaldoCobro]);
+
+  // Rentabilidad por paquete (cotización): ingreso (venta) - costos (pagos a proveedores)
+  const rentabilidadPorPaquete = useMemo(() => {
+    const costosPorCotizacion = new Map();
+    (agenda || []).forEach((p) => {
+      if (!p.cotizacionId) return;
+      const prev = costosPorCotizacion.get(p.cotizacionId) || 0;
+      costosPorCotizacion.set(p.cotizacionId, prev + (Number(p.montoTotal) || 0));
+    });
+    return (cotizaciones || [])
+      .map((q) => {
+        const ingreso = ventaTotalCotizacion(q);
+        const costos = costosPorCotizacion.get(q.id) || 0;
+        const ganancia = ingreso - costos;
+        const margen = ingreso > 0 ? (ganancia / ingreso) * 100 : 0;
+        return {
+          id: q.id,
+          cliente: q.cliente || 'Sin cliente',
+          destino: q.destino || 'Viaje',
+          fechaViajeInicio: q.fechaViajeInicio || '',
+          moneda: q.moneda || 'USD',
+          ingreso,
+          costos,
+          ganancia,
+          margen
+        };
+      })
+      .filter((r) => r.ingreso > 0 || r.costos > 0)
+      .sort((a, b) => b.ganancia - a.ganancia);
+  }, [cotizaciones, agenda]);
+
+  // Flujo de caja neto por mes: cobros esperados - pagos esperados
+  const flujoNetoPorMes = useMemo(() => {
+    const mapa = new Map();
+    const asegurar = (mes) => {
+      if (!mapa.has(mes)) mapa.set(mes, { mes, cobros: 0, pagos: 0 });
+    };
+    (cobrosPorMes(
+      (cotizaciones || []).map((q) => ({
+        fechaReferencia: q.fechaViajeInicio || q.fechaCotizacion || '',
+        montoTotal: ventaTotalCotizacion(q),
+        moneda: q.moneda || 'USD'
+      }))
+    ) || []).forEach((g) => {
+      asegurar(g.mes);
+      mapa.get(g.mes).cobros += Number(g.total) || 0;
+    });
+    (agenda || []).forEach((p) => {
+      const mes = (p.fechaVencimiento || '').slice(0, 7) || 'sin-fecha';
+      asegurar(mes);
+      mapa.get(mes).pagos += Number(p.montoTotal) || 0;
+    });
+    return [...mapa.values()]
+      .map((r) => ({ ...r, neto: r.cobros - r.pagos }))
+      .sort((a, b) => String(a.mes).localeCompare(String(b.mes)));
+  }, [cotizaciones, agenda]);
+
   return (
     <div>
       {/* Encabezado del módulo */}
@@ -740,54 +666,35 @@ export default function CalendarioPagosView({
           <Wallet size={16} />
           <span>Módulo Financiero · Pagos a Proveedores (BCP)</span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {onCargarDemo && (
-            <button className="btn btn-secondary btn-sm" onClick={cargarDemo} style={{ gap: '6px' }}>
-              <Plane size={15} color="var(--neon-cyan)" />
-              <span>Cargar ejemplo (10 vuelos BCP)</span>
-            </button>
-          )}
-          <button className="btn btn-primary btn-sm" onClick={() => setManualAbierto(true)}>
-            <Plus size={15} />
-            <span>Nuevo pago manual</span>
-          </button>
-        </div>
       </div>
 
-      {demoMsg && (
-        <div className="row-soft is-alert" style={{ marginBottom: '16px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <Plane size={16} style={{ color: 'var(--neon-cyan)' }} />
-          <span style={{ fontSize: '0.84rem' }}>{demoMsg}</span>
+      <div className="toolbar" style={{ marginBottom: '18px', gap: '8px', flexWrap: 'wrap' }}>
+        {[
+          { id: 'liquidaciones', label: 'Liquidaciones (BCP)' },
+          { id: 'cajas', label: 'Caja por proveedor' },
+          { id: 'rentabilidad', label: 'Rentabilidad' },
+          { id: 'flujo', label: 'Flujo neto' },
+          { id: 'calendario', label: 'Calendario' },
+          { id: 'obligaciones', label: 'Obligaciones' }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            className={vistaActual === tab.id ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+            onClick={() => setVistaActual(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {alertasRiesgo.length > 0 && (
+        <div className="row-soft is-alert" style={{ marginBottom: '16px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Info size={16} style={{ color: 'var(--danger)' }} />
+          <span style={{ fontSize: '0.84rem' }}>
+            <strong>Riesgo:</strong> {alertasRiesgo.length} obligación(es) vencida(s) a proveedores cuyos clientes aún tienen saldo por cobrar.
+          </span>
         </div>
       )}
-
-      {/* Selector de vista: BCP / Flujo de Caja vs. Calendario vs. Obligaciones */}
-      <div className="toolbar" style={{ gap: '8px', marginBottom: '18px' }}>
-        <button
-          className={vistaActual === 'liquidaciones' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
-          onClick={() => setVistaActual('liquidaciones')}
-          style={{ gap: '6px' }}
-        >
-          <Building2 size={14} />
-          <span>Flujo de Caja BCP & Liquidaciones</span>
-        </button>
-        <button
-          className={vistaActual === 'calendario' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
-          onClick={() => setVistaActual('calendario')}
-          style={{ gap: '6px' }}
-        >
-          <CalendarClock size={14} />
-          <span>Calendario Mensual</span>
-        </button>
-        <button
-          className={vistaActual === 'obligaciones' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
-          onClick={() => setVistaActual('obligaciones')}
-          style={{ gap: '6px' }}
-        >
-          <Wallet size={14} />
-          <span>Todas las Obligaciones</span>
-        </button>
-      </div>
 
       {/* Métricas del período: siempre separadas por moneda */}
       <div className="metrics-strip">
@@ -862,20 +769,9 @@ export default function CalendarioPagosView({
         </div>
       </div>
 
-      {/* Ayuda */}
-      <div className="panel-inset" style={{ display: 'flex', gap: '12px', marginBottom: '18px' }}>
-        <Info size={18} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
-        <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-          <strong>Mapa de Calendario de Pagos y Desglose:</strong> Los vuelos <strong>Emitidos (Confirmados)</strong> en{' '}
-          <strong>Aero</strong> vencen a las <strong>24–48 hs posteriores a la emisión</strong>. Los servicios{' '}
-          <strong>Reservados</strong> en <strong>Azabache / Price</strong> (hoteles, traslados, asistencias) vencen según
-          la <strong>grilla mensual de bloques</strong> (ej. reservados del 1 al 5 del mes se pagan el día 20). Hacé clic
-          en cualquier día del calendario para ver su desglose completo y registrar pagos totales o parciales.
-        </p>
-      </div>
 
       {(vistaActual === 'liquidaciones' || vistaActual === 'calendario') && (
-        <div className="cal-layout" style={{ marginBottom: '18px' }}>
+        <div style={{ marginBottom: '18px' }}>
           <div className="card">
             <CalendarioMensual
               mes={mes}
@@ -886,127 +782,9 @@ export default function CalendarioPagosView({
               moneda={monedaCalendario}
             />
           </div>
-
-          <div className="card">
-            <div className="card-header">
-              <div className="card-title-group">
-                <div className="card-icon">
-                  <CalendarClock size={18} />
-                </div>
-                <div>
-                  <h3 className="card-title">Desglose del Día · {formatFechaLarga(diaEfectivo)}</h3>
-                  <p className="card-subtitle">
-                    {pagosDelDia.length
-                      ? `${pagosDelDia.length} ${pagosDelDia.length === 1 ? 'obligación a pagar' : 'obligaciones a pagar'} en esta fecha`
-                      : 'Sin pagos para este día'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {diasConPagosDelMes.length > 0 && (
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                {diasConPagosDelMes.map((d) => {
-                  const activo = d.fecha === diaEfectivo;
-                  return (
-                    <button
-                      key={d.fecha}
-                      type="button"
-                      className={activo ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
-                      style={{ height: '28px', fontSize: '0.73rem', padding: '2px 9px' }}
-                      onClick={() => setDiaSeleccionado(d.fecha)}
-                    >
-                      {formatFechaLarga(d.fecha)} ({formatearMonto(d.saldo > 0 ? d.saldo : d.total, monedaCalendario)})
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {pagosDelDia.length === 0 ? (
-              <div className="empty-state" style={{ padding: '24px 12px' }}>
-                <div className="empty-state-icon">
-                  <CalendarClock size={22} />
-                </div>
-                <h3>Día sin vencimientos</h3>
-                <p>Elegí otro día en el calendario para ver qué debés pagar y su desglose.</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto' }}>
-                {pagosDelDia.map((p) => {
-                  const etiqueta = etiquetaEstado(p, hoy);
-                  return (
-                    <div key={p.clave} className="row-soft">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <strong style={{ fontSize: '0.9rem', color: 'var(--neon-cyan)' }}>
-                            {p.proveedor || 'Proveedor'}
-                          </strong>
-                          <span
-                            className={`badge ${
-                              p.origenVencimiento === '24-48hs' ? 'badge-warning' : 'badge-info'
-                            }`}
-                            style={{ fontSize: '0.68rem' }}
-                          >
-                            {p.origenVencimiento === '24-48hs'
-                              ? `⚡ ${p.plazoPagoHoras || 48} hs post-emisión`
-                              : p.rangoBCPCorto
-                                ? `📅 Bloque ${p.rangoBCPCorto}`
-                                : 'Vencimiento'}
-                          </span>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <strong className="mono">{formatearMonto(Math.max(p.saldo, 0), p.moneda)}</strong>
-                          {(p.estado === 'Parcial' || p.estado === 'Pagado') && (
-                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                              de {formatearMonto(p.montoTotal, p.moneda)}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0 2px', fontWeight: 600 }}>
-                        {p.concepto} · {p.cliente}
-                        {p.cotizacionId ? ` (${p.cotizacionId})` : ''}
-                      </div>
-                      {(p.costoBasePresupuesto > 0 || p.precioVenta > 0) && (
-                        <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                          Costo Compra ({p.proveedor}): <strong>{formatearMonto(p.montoTotal, p.moneda)}</strong>
-                          {p.costoBasePresupuesto > 0 && p.costoBasePresupuesto !== p.montoTotal && (
-                            <span>
-                              {' '}· Ref. PDF ({p.proveedorBasePresupuesto || 'Azabache'}):{' '}
-                              <strong style={{ color: 'var(--neon-amber)' }}>
-                                {formatearMonto(p.costoBasePresupuesto, p.moneda)}
-                              </strong>
-                            </span>
-                          )}
-                          {p.precioVenta > 0 && (
-                            <span>
-                              {' '}· Cliente: <strong>{formatearMonto(p.precioVenta, p.moneda)}</strong>
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className={`badge ${etiqueta.badge}`}>{etiqueta.texto}</span>
-                        <button
-                          className="btn btn-outline btn-sm"
-                          onClick={() => setPagoActivo(p)}
-                          disabled={Math.max(p.saldo, 0) <= 0}
-                        >
-                          <CreditCard size={13} />
-                          <span>Registrar pago</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
         </div>
       )}
-
-      {(vistaActual === 'calendario' || vistaActual === 'obligaciones') && (
+{(vistaActual === 'calendario' || vistaActual === 'obligaciones') && (
         <>
       {/* Listado con filtros */}
       <div className="card">
@@ -1075,17 +853,18 @@ export default function CalendarioPagosView({
         ) : (
           <div className="jf-table-wrap">
             <table className="jf-table">
+              <caption className="sr-only">Detalle financiero</caption>
               <thead>
                 <tr>
-                  <th>Proveedor</th>
-                  <th>Concepto</th>
-                  <th>Cliente / Cotización</th>
-                  <th>Vencimiento</th>
-                  <th style={{ textAlign: 'right' }}>Total</th>
-                  <th style={{ textAlign: 'right' }}>Pagado</th>
-                  <th style={{ textAlign: 'right' }}>Saldo</th>
-                  <th>Estado</th>
-                  <th style={{ textAlign: 'right' }}>Acciones</th>
+                  <th scope="col">Proveedor</th>
+                  <th scope="col">Concepto</th>
+                  <th scope="col">Cliente / Cotización</th>
+                  <th scope="col">Vencimiento</th>
+                  <th scope="col" style={{ textAlign: 'right' }}>Total</th>
+                  <th scope="col" style={{ textAlign: 'right' }}>Pagado</th>
+                  <th scope="col" style={{ textAlign: 'right' }}>Saldo</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" style={{ textAlign: 'right' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -1144,7 +923,7 @@ export default function CalendarioPagosView({
                           {p.origen === 'manual' && (
                             <button
                               className="btn btn-danger btn-sm btn-icon-only"
-                              onClick={() => onEliminarPagoManual(p.manualId)}
+                              onClick={() => setPagoAEliminar({ tipo: 'manual', id: p.manualId })}
                               title="Eliminar pago manual"
                             >
                               <Trash2 size={14} />
@@ -1173,6 +952,245 @@ export default function CalendarioPagosView({
       </div>
 
         </>
+      )}
+
+      {vistaActual === 'rentabilidad' && (
+        <div className="card" style={{ marginBottom: '18px' }}>
+          <div className="card-header">
+            <div className="card-title-group">
+              <div className="card-icon">
+                <Wallet size={18} />
+              </div>
+              <div>
+                <h3 className="card-title">Rentabilidad por paquete</h3>
+                <p className="card-subtitle">Ingreso (venta al cliente) − Costos (pagos a proveedores)</p>
+              </div>
+            </div>
+          </div>
+
+          {rentabilidadPorPaquete.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon"><Wallet size={24} /></div>
+              <h3>Sin datos</h3>
+              <p>Guardá cotizaciones con precio de venta y servicios activos.</p>
+            </div>
+          ) : (
+            <div className="jf-table-wrap">
+              <table className="jf-table">
+                <caption className="sr-only">Detalle financiero</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Viaje</th>
+                    <th scope="col">Inicio</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>Ingreso</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>Costos</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>Ganancia</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>Margen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rentabilidadPorPaquete.map((r) => (
+                    <tr key={r.id}>
+                      <td><strong>{r.cliente}</strong></td>
+                      <td style={{ maxWidth: '200px' }}>{r.destino}</td>
+                      <td>{r.fechaViajeInicio ? formatFechaLarga(r.fechaViajeInicio) : '—'}</td>
+                      <td className="mono" style={{ textAlign: 'right' }}>
+                        {formatearMonto(r.ingreso, r.moneda)}
+                      </td>
+                      <td className="mono" style={{ textAlign: 'right' }}>
+                        {formatearMonto(r.costos, r.moneda)}
+                      </td>
+                      <td className="mono" style={{ textAlign: 'right', fontWeight: 700, color: r.ganancia >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                        {formatearMonto(r.ganancia, r.moneda)}
+                      </td>
+                      <td className="mono" style={{ textAlign: 'right' }}>
+                        {r.margen.toFixed(1)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {vistaActual === 'flujo' && (
+        <div className="card" style={{ marginBottom: '18px' }}>
+          <div className="card-header">
+            <div className="card-title-group">
+              <div className="card-icon">
+                <Wallet size={18} />
+              </div>
+              <div>
+                <h3 className="card-title">Flujo de caja neto por mes</h3>
+                <p className="card-subtitle">Cobros esperados − Pagos a proveedores</p>
+              </div>
+            </div>
+          </div>
+
+          {flujoNetoPorMes.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon"><Wallet size={24} /></div>
+              <h3>Sin datos</h3>
+              <p>Guardá cotizaciones con servicios activos.</p>
+            </div>
+          ) : (
+            <div className="jf-table-wrap">
+              <table className="jf-table">
+                <caption className="sr-only">Detalle financiero</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Mes</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>Cobros</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>Pagos</th>
+                    <th scope="col" style={{ textAlign: 'right' }}>Neto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {flujoNetoPorMes.map((r) => (
+                    <tr key={r.mes}>
+                      <td>{r.mes === 'sin-fecha' ? 'Sin fecha' : r.mes}</td>
+                      <td className="mono" style={{ textAlign: 'right', color: 'var(--success)' }}>
+                        {formatearMonto(r.cobros, 'USD')}
+                      </td>
+                      <td className="mono" style={{ textAlign: 'right', color: 'var(--danger)' }}>
+                        {formatearMonto(r.pagos, 'USD')}
+                      </td>
+                      <td className="mono" style={{ textAlign: 'right', fontWeight: 700, color: r.neto >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                        {formatearMonto(r.neto, 'USD')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {vistaActual === 'cajas' && (
+        <div className="card" style={{ marginBottom: '18px' }}>
+          <div className="card-header">
+            <div className="card-title-group">
+              <div className="card-icon">
+                <Building2 size={18} />
+              </div>
+              <div>
+                <h3 className="card-title">Caja por proveedor</h3>
+                <p className="card-subtitle">
+                  Desglose de lo que debés a cada proveedor, por cliente y paquete
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {cajasProveedores.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <Building2 size={24} />
+              </div>
+              <h3>Sin obligaciones</h3>
+              <p>Guardá cotizaciones con servicios activos para ver la caja por proveedor.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {cajasProveedores.map((caja) => (
+                <details key={caja.proveedor} className="row-soft" style={{ padding: '12px' }}>
+                  <summary style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <strong style={{ fontSize: '0.95rem' }}>{caja.proveedor}</strong>
+                      <span className={`badge ${caja.estado === 'Pagado' ? 'badge-success' : caja.estado === 'Vencido' ? 'badge-danger' : 'badge-neutral'}`}>
+                        {caja.estado}
+                      </span>
+                      <span className="badge badge-neutral">{caja.cantidad} obligación(es)</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '16px', textAlign: 'right' }}>
+                      <div>
+                        <div className="metric-label">Total</div>
+                        <strong className="mono">{formatearMonto(caja.total, caja.moneda)}</strong>
+                      </div>
+                      <div>
+                        <div className="metric-label">Pagado</div>
+                        <strong className="mono" style={{ color: 'var(--success)' }}>
+                          {formatearMonto(caja.pagado, caja.moneda)}
+                        </strong>
+                      </div>
+                      <div>
+                        <div className="metric-label">Saldo</div>
+                        <strong className="mono" style={{ color: caja.saldo > 0 ? 'var(--danger)' : 'var(--success)' }}>
+                          {formatearMonto(caja.saldo, caja.moneda)}
+                        </strong>
+                      </div>
+                    </div>
+                  </summary>
+
+                  <div style={{ marginTop: '12px' }}>
+                    <div className="jf-table-wrap">
+                      <table className="jf-table">
+                        <caption className="sr-only">Detalle financiero</caption>
+                        <thead>
+                          <tr>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Concepto</th>
+                            <th scope="col">Vencimiento</th>
+                            <th scope="col" style={{ textAlign: 'right' }}>Total</th>
+                            <th scope="col" style={{ textAlign: 'right' }}>Saldo</th>
+                            <th scope="col">Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {caja.items.map((it) => (
+                            <tr key={it.clave}>
+                              <td>
+                                <strong>{it.cliente}</strong>
+                                {it.cotizacionId && (
+                                  <div className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                    {it.cotizacionId}
+                                  </div>
+                                )}
+                                {Array.isArray(it.pasajeros) && it.pasajeros.length > 0 && (
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                    {it.pasajeros.join(', ')}
+                                  </div>
+                                )}
+                              </td>
+                              <td style={{ maxWidth: '220px' }}>{it.concepto}</td>
+                              <td>
+                                {it.fechaVencimiento ? (
+                                  <span>{formatFechaLarga(it.fechaVencimiento)}</span>
+                                ) : (
+                                  <span className="badge badge-neutral">Sin fecha</span>
+                                )}
+                                {it.origenVencimiento && (
+                                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                                    {it.origenVencimiento}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="mono" style={{ textAlign: 'right' }}>
+                                {formatearMonto(it.montoTotal, it.moneda)}
+                              </td>
+                              <td className="mono" style={{ textAlign: 'right', fontWeight: 700 }}>
+                                {formatearMonto(it.saldo, it.moneda)}
+                              </td>
+                              <td>
+                                <span className={`badge ${it.estado === 'Pagado' ? 'badge-success' : it.estado === 'Parcial' ? 'badge-warning' : 'badge-neutral'}`}>
+                                  {it.estado || 'Pendiente'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </details>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {vistaActual === 'liquidaciones' && (
@@ -1312,22 +1330,77 @@ export default function CalendarioPagosView({
         />
       )}
 
+      {pagoDetalle && (
+        <div className="modal-backdrop" onClick={() => setPagoDetalle(null)}>
+          <div className="modal-content" style={{ maxWidth: '620px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="card-title-group">
+                <div className="card-icon">
+                  <Wallet size={18} />
+                </div>
+                <div>
+                  <h3 className="card-title">Detalle de obligación</h3>
+                  <p className="card-subtitle">{pagoDetalle.proveedor || 'Proveedor'} · {pagoDetalle.concepto}</p>
+                </div>
+              </div>
+              <button className="modal-close-btn" onClick={() => setPagoDetalle(null)} title="Cerrar">
+                ×
+              </button>
+            </div>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div><strong>Cliente:</strong> {pagoDetalle.cliente}</div>
+              <div><strong>Cotización:</strong> {pagoDetalle.cotizacionId}</div>
+              <div><strong>Servicio:</strong> {pagoDetalle.concepto}</div>
+              <div><strong>Proveedor:</strong> {pagoDetalle.proveedor}</div>
+              <div><strong>Monto total:</strong> {formatearMonto(pagoDetalle.montoTotal, pagoDetalle.moneda)}</div>
+              <div><strong>Saldo:</strong> {formatearMonto(Math.max(pagoDetalle.saldo, 0), pagoDetalle.moneda)}</div>
+              <div><strong>Estado:</strong> {pagoDetalle.estado}</div>
+              <div><strong>Vencimiento:</strong> {formatFechaLarga(pagoDetalle.fechaVencimiento)}</div>
+              {pagoDetalle.rangoBCPCorto && <div><strong>Bloque BCP:</strong> {pagoDetalle.rangoBCPCorto}</div>}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary btn-sm" onClick={() => setPagoDetalle(null)}>
+                Cerrar
+              </button>
+              {Math.max(pagoDetalle.saldo, 0) > 0 && (
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => {
+                    setPagoActivo(pagoDetalle);
+                    setPagoDetalle(null);
+                  }}
+                >
+                  <CreditCard size={13} />
+                  Registrar pago
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {pagoActivo && (
         <RegistrarPagoModal
           pago={pagoActivo}
           onClose={() => setPagoActivo(null)}
-          onRegistrarPago={onRegistrarPago}
-          onEliminarPago={onEliminarPago}
-        />
+          onRegistrarPago={onRegistrarPago}        />
       )}
 
-      {manualAbierto && (
-        <NuevoPagoManualModal
-          proveedores={proveedoresSugeridos}
-          onClose={() => setManualAbierto(false)}
-          onCrear={onCrearPagoManual}
-        />
-      )}
+      <ConfirmDialog
+        open={Boolean(pagoAEliminar)}
+        title="Eliminar pago registrado"
+        message="¿Eliminar este pago del historial?"
+        warning="El saldo pendiente de la obligación se recalculará automáticamente."
+        confirmLabel="Eliminar pago"
+        onConfirm={() => {
+          if (!pagoAEliminar) return;
+          if (pagoAEliminar.tipo === 'manual') onEliminarPagoManual?.(pagoAEliminar.id);
+          else onEliminarPago?.(pagoAEliminar.id);
+          setPagoAEliminar(null);
+        }}
+        onCancel={() => setPagoAEliminar(null)}
+      />
+
     </div>
   );
 }

@@ -12,6 +12,9 @@ dist
 dist-ssr
 .tmp-test
 .tmp-ui
+.tmp-cobros/
+.tmp-debug/
+.tmp-vista-cobros/
 *.local
 
 # Editor directories and files

@@ -104,7 +104,6 @@ export default function CalendarioMensual({
             >
               <div className="cal-day-top">
                 <span className="cal-day-num">{diaNum}</span>
-                {evs.length > 0 && <span className="cal-day-count">{evs.length}</span>}
               </div>
               {evs.length > 0 && (
                 <>

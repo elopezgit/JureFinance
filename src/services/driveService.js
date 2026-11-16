@@ -2,16 +2,17 @@
 // Connected Root Folder: https://drive.google.com/drive/u/4/folders/19uQ5nKKN_tRw080ecqb-buUOQWqkhwka
 
 import REAL_DRIVE_DATA from '../data/driveLiveRealData.json';
-import { INITIAL_COTIZACIONES, INITIAL_OPERADORES } from '../data/initialData';
+import { STORAGE_KEY_QUOTES, STORAGE_KEY_COBROS_CLIENTES } from '../config/storage';
 
 const STORAGE_KEY_FILES = 'jurefinance_drive_real_v7';
 const STORAGE_KEY_CONFIG = 'jurefinance_drive_config_v5';
 const STORAGE_KEY_TOKEN = 'jurefinance_drive_token_v5';
-const STORAGE_KEY_DB = 'jurefinance_quotes_v2';
+const STORAGE_KEY_DB = STORAGE_KEY_QUOTES;
 const STORAGE_KEY_CONFIG_MENSUAL = 'jurefinance_config_mensual_v2';
 const STORAGE_KEY_PAGOS_TTOO = 'jurefinance_pagos_ttoo_v1';
 const STORAGE_KEY_PAGOS_MANUALES = 'jurefinance_pagos_ttoo_manuales_v1';
 const STORAGE_KEY_ARREGLOS_COBRO = 'jurefinance_arreglos_cobro_v1';
+const STORAGE_KEY_PAGOS_CLIENTES = STORAGE_KEY_COBROS_CLIENTES;
 
 export const TARGET_ROOT_FOLDER_ID = '19uQ5nKKN_tRw080ecqb-buUOQWqkhwka';
 export const TARGET_DRIVE_URL = 'https://drive.google.com/drive/u/4/folders/19uQ5nKKN_tRw080ecqb-buUOQWqkhwka';
@@ -111,7 +112,7 @@ export function getStoredAccessToken() {
       return null;
     }
     return tokenData.accessToken;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -279,7 +280,7 @@ export async function fetchFolderContentLive(folderId, clientName = '') {
           const isUnrec = /acci[oó]n\s+no\s+reconocida/i.test(errMsg) || errMsg.toLowerCase().includes('no reconocida') || errMsg.toLowerCase().includes('unrecognized');
           return { success: false, error: errMsg, isActionUnrecognized: isUnrec };
         }
-      } catch (e) {
+      } catch {
         return { success: false, error: 'Respuesta inválida de Google Apps Script' };
       }
     } catch (err) {
@@ -408,7 +409,7 @@ export async function uploadFileToTargetFolder(targetFolderId, clientName, fileD
         driveFileId = data.fileId;
         webViewLink = data.fileUrl;
       }
-    } catch (e) {
+    } catch {
       console.warn('Error subiendo archivo vía Apps Script:', e);
     }
   }
@@ -490,7 +491,7 @@ export async function syncBidirectionalWithDrive() {
       let meta = null;
       try {
         meta = await applicationsScriptFetch(rawUrl, 'getTreeMeta');
-      } catch (e) {
+      } catch {
         if (e.isAuthIssue) {
           authIssue = true;
           lastErrorMsg = e.message;
@@ -527,7 +528,7 @@ export async function syncBidirectionalWithDrive() {
         let data = null;
         try {
           data = await applicationsScriptFetch(rawUrl, action);
-        } catch (e) {
+        } catch {
           if (e.isAuthIssue) authIssue = true;
           lastErrorMsg = e.message;
           continue;
@@ -561,6 +562,9 @@ export async function syncBidirectionalWithDrive() {
           }
           if (data.db && Array.isArray(data.db.arreglosCobro)) {
             localStorage.setItem(STORAGE_KEY_ARREGLOS_COBRO, JSON.stringify(data.db.arreglosCobro));
+          }
+          if (data.db && Array.isArray(data.db.pagosClientes)) {
+            localStorage.setItem(STORAGE_KEY_PAGOS_CLIENTES, JSON.stringify(data.db.pagosClientes));
           }
 
           const updatedAtMs = data.updatedAtMs || (meta && meta.updatedAt) || Date.now();
@@ -691,7 +695,7 @@ async function applicationsScriptFetch(rawUrl, action) {
   const text = await res.text();
   try {
     return JSON.parse(text);
-  } catch (parseErr) {
+  } catch {
     if (text.includes('admin_policy_enforced')) {
       const err = new Error('Google Workspace: en Apps Script abre "Implementar > Administrar implementaciones" y en "Quién tiene acceso" selecciona "Cualquier usuario".');
       err.isAuthIssue = true;
@@ -836,7 +840,7 @@ async function callAppsScriptPost(url, payload) {
     const text = await res.text();
     try {
       return JSON.parse(text);
-    } catch (e) {
+    } catch {
       return { success: true, text };
     }
   } catch (err) {
@@ -853,7 +857,7 @@ export function getStoredMonthlyConfig() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_CONFIG_MENSUAL);
     if (raw) return JSON.parse(raw);
-  } catch (e) {
+  } catch {
     console.warn('No se pudo leer la configuración mensual local:', e);
   }
   return null;
@@ -865,7 +869,7 @@ export function getStoredMonthlyConfig() {
 export function saveMonthlyConfigLocal(list) {
   try {
     localStorage.setItem(STORAGE_KEY_CONFIG_MENSUAL, JSON.stringify(list || []));
-  } catch (e) {
+  } catch {
     console.warn('No se pudo guardar la configuración mensual local:', e);
   }
 }
@@ -879,7 +883,7 @@ function readStoredList(key) {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
+  } catch {
     console.warn(`No se pudo leer ${key}:`, e);
     return [];
   }
@@ -888,7 +892,7 @@ function readStoredList(key) {
 function writeStoredList(key, list) {
   try {
     localStorage.setItem(key, JSON.stringify(list || []));
-  } catch (e) {
+  } catch {
     console.warn(`No se pudo guardar ${key}:`, e);
   }
 }
@@ -917,6 +921,14 @@ export function saveArreglosCobroLocal(list) {
   writeStoredList(STORAGE_KEY_ARREGLOS_COBRO, list);
 }
 
+/** Cobros registrados del cliente (pagos parciales/acumulativos). */
+export function getStoredPagosClientes() {
+  return readStoredList(STORAGE_KEY_PAGOS_CLIENTES);
+}
+export function savePagosClientesLocal(list) {
+  writeStoredList(STORAGE_KEY_PAGOS_CLIENTES, list);
+}
+
 /**
  * Guardar toda la Base de Datos directamente en Google Drive
  * Crea o actualiza 'jurefinance_db.json' en la raíz 19uQ5nKKN_tRw080ecqb-buUOQWqkhwka
@@ -942,6 +954,9 @@ export async function saveDatabaseToDrive(input) {
   const arreglosCobro = isLegacyArray
     ? getStoredArreglosCobro()
     : (input?.arreglosCobro || getStoredArreglosCobro());
+  const pagosClientes = isLegacyArray
+    ? getStoredPagosClientes()
+    : (input?.pagosClientes || getStoredPagosClientes());
 
   const dbPayload = {
     cotizaciones,
@@ -949,6 +964,7 @@ export async function saveDatabaseToDrive(input) {
     pagosTTOO,
     pagosTTOOManuales,
     arreglosCobro,
+    pagosClientes,
     lastUpdated: new Date().toISOString(),
     system: 'JureFinance Travel Agency Suite'
   };
@@ -969,7 +985,7 @@ export async function saveDatabaseToDrive(input) {
     try {
       await saveDbFileInGoogleDriveRest(dbPayload, TARGET_ROOT_FOLDER_ID, token);
       return { success: true, message: 'Cotizaciones guardadas en Google Drive' };
-    } catch (e) {
+    } catch {
       console.warn('No se pudo guardar DB vía REST:', e);
     }
   }
@@ -1046,7 +1062,7 @@ export async function createClientDriveFolder(clientName, driveParentId = TARGET
       driveFolderUrl = `https://drive.google.com/drive/u/4/folders/${driveFolderId}`;
       await createFolderInGoogleDrive('Viaje Concretado (Vouchers & Pasajes)', driveFolderId, token);
       await createFolderInGoogleDrive('Documentación Cliente (DNI & Pasaportes)', driveFolderId, token);
-    } catch (e) {
+    } catch {
       console.warn('Error creando en Google Drive REST:', e);
     }
   }
@@ -1107,7 +1123,7 @@ export async function uploadFileToClient(clientName, folderType, fileData, nativ
         driveFileId = data.fileId;
         webViewLink = data.fileUrl;
       }
-    } catch (e) {
+    } catch {
       console.warn('Error subiendo archivo vía Apps Script:', e);
     }
   }
@@ -1214,7 +1230,7 @@ export async function renameClientFile(clientName, param2, param3, param4) {
     } else if (token && driveFileId) {
       try {
         await renameGoogleDriveItem(driveFileId, newName.trim(), token);
-      } catch (e) {}
+      } catch {}
     }
 
     localStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(allFiles));

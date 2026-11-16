@@ -72,7 +72,7 @@ export default function DashboardView({
     totalCotizadoVenta > 0 ? (totalGananciaReal / totalCotizadoVenta) * 100 : 0;
 
   const totalQuotesCount = Math.max(cotizaciones.length, 1);
-  const conversionRate = Math.round(
+  const _conversionRate = Math.round(
     ((statusCounts.Aceptada + statusCounts.Pagada) / totalQuotesCount) * 100
   );
 
@@ -348,13 +348,14 @@ export default function DashboardView({
         ) : (
           <div className="jf-table-wrap">
             <table className="jf-table">
+              <caption className="sr-only">Detalle financiero</caption>
               <thead>
                 <tr>
-                  <th>Cliente</th>
-                  <th>Destino</th>
-                  <th>Estado</th>
-                  <th>Venta</th>
-                  <th>Ganancia</th>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Destino</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Venta</th>
+                  <th scope="col">Ganancia</th>
                 </tr>
               </thead>
               <tbody>

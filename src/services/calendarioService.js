@@ -5,10 +5,10 @@
 
 import {
   getFechaPagoTTOO,
-  getFechaPagoAereoEmitido,
   getBloqueBCP,
   getBloquesBCPPorVencimiento,
-  getMesFromFecha
+  getMesFromFecha,
+  sumarDiasISO
 } from './ttoService';
 import {
   normalizarServicios,
@@ -133,6 +133,8 @@ function basePago(overrides) {
     moneda: 'USD',
     montoTotal: 0,
     fechaEmision: '',
+    fechaViajeInicio: '',
+    fechaViajeFin: '',
     fechaVencimiento: '',
     origenVencimiento: '',
     ...overrides
@@ -151,6 +153,9 @@ function pagoDesdeItem(quote, item, configMensual) {
     ? item.fechaEmision || ''
     : item.fechaReserva || item.fechaEmision || '';
 
+  const fechaViajeInicio = quote.fechaViajeInicio || '';
+  const fechaViajeFin = quote.fechaViajeFin || '';
+
   let fechaVencimiento = item.vencimientoTTOO || '';
   let origenVencimiento = fechaVencimiento ? 'manual' : '';
   let bloqueBCP = null;
@@ -158,65 +163,34 @@ function pagoDesdeItem(quote, item, configMensual) {
   let rangoBCPCorto = '';
 
   if (esAereo && !fechaVencimiento && item.fechaEmision) {
-    // Regla principal de Aero (Cuenta Corriente - Renovación Bimestral cada 2 meses):
-    // Las emisiones se liquidan según los umbrales semanales del mes:
-    //   · 01 al 07 → día 13 (Nov) / 14 (Dic)
-    //   · 08 al 15 → día 19 (Nov) / 21 (Dic)
-    //   · 16 al 22 → día 27 (Nov) / 30 (Dic)
-    //   · 23 al 30/31 → día 04 Dic / 07 Ene
-    // Si explícitamente se eligió '24-48hs' (p. ej. sin cuenta corriente), usa +24/48 hs.
-    const usarRegla2448 = item.reglaVencimiento === '24-48hs';
-
-    if (usarRegla2448) {
-      const horas = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
-      fechaVencimiento = getFechaPagoAereoEmitido(item.fechaEmision, horas);
-      origenVencimiento = fechaVencimiento ? '24-48hs' : 'sin-fecha';
-      rangoBCP = `Pago a ${horas} hs post-emisión confirmada`;
-      rangoBCPCorto = `${horas} hs post-emisión`;
-    } else {
-      bloqueBCP = getBloqueBCP(
+    // Regla de Aero (BCP): las emisiones se liquidan según los umbrales del mes.
+    bloqueBCP = getBloqueBCP(
+      configMensual,
+      item.proveedor || 'Aero',
+      item.fechaEmision
+    );
+    if (bloqueBCP) {
+      fechaVencimiento = getFechaPagoTTOO(
         configMensual,
         item.proveedor || 'Aero',
         item.fechaEmision
       );
-      if (bloqueBCP) {
-        fechaVencimiento = getFechaPagoTTOO(
-          configMensual,
-          item.proveedor || 'Aero',
-          item.fechaEmision
-        );
-        origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
-        rangoBCP = bloqueBCP?.rangoLabel || '';
-        rangoBCPCorto = bloqueBCP?.rangoCorto || '';
-      } else {
-        origenVencimiento = 'sin-config';
-      }
-    }
-  } else if (!esAereo && !fechaVencimiento && fechaOperacion && item.estadoReserva !== 'SinReservar') {
-    // Servicios reservados en Proveedor 2 (Azabache / Price: hotel, traslado, asistencia):
-    // Pueden liquidarse a 24-48 hs de reserva confirmada o según la grilla de umbrales del proveedor.
-    if (item.reglaVencimiento === '24-48hs') {
-      const horas = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
-      fechaVencimiento = getFechaPagoAereoEmitido(fechaOperacion, horas);
-      origenVencimiento = fechaVencimiento ? '24-48hs' : 'sin-fecha';
-      rangoBCP = `Pago a ${horas} hs post-reserva confirmada`;
-      rangoBCPCorto = `${horas} hs reserva`;
+      origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
+      rangoBCP = bloqueBCP?.rangoLabel || '';
+      rangoBCPCorto = bloqueBCP?.rangoCorto || '';
     } else {
-      bloqueBCP = getBloqueBCP(
-        configMensual,
-        item.proveedor || 'Azabache',
-        fechaOperacion
-      );
-      if (bloqueBCP) {
-        fechaVencimiento = bloqueBCP.fechaPago || '';
-        origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
-        rangoBCP = bloqueBCP.rangoLabel
-          ? bloqueBCP.rangoLabel.replace(/^Emisiones/, 'Reservados')
-          : '';
-        rangoBCPCorto = bloqueBCP.rangoCorto || '';
-      } else {
-        origenVencimiento = 'sin-config';
-      }
+      origenVencimiento = 'sin-config';
+    }
+  } else if (!esAereo && !fechaVencimiento) {
+    // Resto de proveedores: pagado una semana antes del viaje.
+    if (fechaViajeInicio) {
+      fechaVencimiento = sumarDiasISO(fechaViajeInicio, -7);
+      origenVencimiento = fechaVencimiento ? 'semana-antes-viaje' : 'sin-fecha';
+      rangoBCP = 'Pago 7 días antes del viaje';
+      rangoBCPCorto = '7 días antes';
+    } else if (fechaOperacion && item.estadoReserva !== 'SinReservar') {
+      // Sin fecha de viaje: sin vencimiento calculable.
+      origenVencimiento = 'sin-fecha';
     }
   }
 
@@ -250,10 +224,11 @@ function pagoDesdeItem(quote, item, configMensual) {
     concepto: item.nombre || SECCION_LABEL[item.tipo] || item.tipo,
     fechaEmision: fechaOperacion,
     fechaReserva: item.fechaReserva || '',
+    fechaViajeInicio,
+    fechaViajeFin,
     bloqueBCP,
     rangoBCP,
     rangoBCPCorto,
-    plazoPagoHoras: esAereo ? Number(item.plazoPagoHoras) || 48 : undefined,
     moneda: quote.moneda || 'USD',
     montoTotal: Number(item.montoTotalNeto) || 0,
     precioVenta: precioVentaItem(item),
@@ -746,4 +721,61 @@ export function repartirPagoEnLiquidacion(liquidacion, monto, datos = {}) {
   }
 
   return registros;
+}
+
+/**
+ * Caja por proveedor: agrupa las obligaciones por proveedor y, dentro de cada
+ * proveedor, por cliente/cotización, para ver qué se debe a cada uno y por qué
+ * paquete.
+ */
+export function cajaPorProveedor(pagos = []) {
+  const mapa = new Map();
+  (pagos || []).forEach((p) => {
+    const prov = p.proveedor || 'Sin proveedor';
+    if (!mapa.has(prov)) {
+      mapa.set(prov, {
+        proveedor: prov,
+        moneda: p.moneda || 'USD',
+        items: [],
+        total: 0,
+        pagado: 0,
+        saldo: 0
+      });
+    }
+    const caja = mapa.get(prov);
+    caja.items.push({
+      cliente: p.cliente || 'Sin cliente',
+      cotizacionId: p.cotizacionId || '',
+      concepto: p.concepto || '',
+      pasajeros: Array.isArray(p.pasajeros) ? p.pasajeros : [],
+      pax: Number(p.pax) || 1,
+      fechaVencimiento: p.fechaVencimiento || '',
+      fechaViajeInicio: p.fechaViajeInicio || '',
+      origenVencimiento: p.origenVencimiento || '',
+      montoTotal: Number(p.montoTotal) || 0,
+      pagado: Number(p.pagado) || 0,
+      saldo: Math.max(Number(p.saldo) || 0, 0),
+      estado: p.estado || '',
+      moneda: p.moneda || 'USD',
+      clave: p.clave
+    });
+    caja.total += Number(p.montoTotal) || 0;
+    caja.pagado += Number(p.pagado) || 0;
+    caja.saldo += Math.max(Number(p.saldo) || 0, 0);
+  });
+
+  return [...mapa.values()]
+    .map((c) => ({
+      ...c,
+      cantidad: c.items.length,
+      estado:
+        c.saldo <= 0.005
+          ? 'Pagado'
+          : c.items.some(
+              (i) => i.fechaVencimiento && i.fechaVencimiento < hoyISO()
+            )
+          ? 'Vencido'
+          : 'Pendiente'
+    }))
+    .sort((a, b) => String(a.proveedor).localeCompare(String(b.proveedor)));
 }

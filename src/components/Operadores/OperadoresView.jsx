@@ -1,6 +1,6 @@
 // OperadoresView.jsx - Tour Operators (TTOO) Management Directory
 import React, { useState } from 'react';
-import { Building2, Plus, Plane, Hotel, ShieldCheck, Car, Clock, Mail, ExternalLink, Edit2 } from 'lucide-react';
+import { Building2, Plus, Plane, Hotel, ShieldCheck, Car, Clock, Mail } from 'lucide-react';
 import { INITIAL_OPERADORES } from '../../data/initialData';
 import { normalizarServicios } from '../../services/serviciosService';
 
@@ -13,7 +13,7 @@ export default function OperadoresView({
   const operadores = Array.isArray(operadoresList) ? operadoresList : operadoresLocales;
   const [showAddModal, setShowAddModal] = useState(false);
   const [newNombre, setNewNombre] = useState('');
-  const [newCategoria, setNewCategoria] = useState('Multiservicio');
+  const [newCategoria] = useState('Multiservicio');
   const [newPrestaciones, setNewPrestaciones] = useState(['Hotel']);
   const [newDescripcion, setNewDescripcion] = useState('');
   const [newContacto, setNewContacto] = useState('');
@@ -176,7 +176,7 @@ export default function OperadoresView({
                         {p === 'Aéreos' && <Plane size={12} color="var(--primary-light)" />}
                         {p === 'Hotel' && <Hotel size={12} color="var(--warning)" />}
                         {p === 'Asistencia al Viajero' && <ShieldCheck size={12} color="var(--success)" />}
-                        {p === 'Traslados' && <Car size={12} color="var(--accent)" />}
+                        {p === 'Traslados' && <Car size={12} color="var(--neon-cyan)" />}
                         <span>{p}</span>
                       </span>
                     ))}

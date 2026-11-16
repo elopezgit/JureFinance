@@ -75,7 +75,7 @@
 .wizard-step.completed .wizard-step-circle {
   background: rgba(16, 185, 129, 0.16);
   border-color: rgba(16, 185, 129, 0.45);
-  color: #34d399;
+  color: var(--success);
 }
 
 .wizard-step-info {
@@ -101,7 +101,7 @@
 
 .wizard-step.active .wizard-step-label,
 .wizard-step.active .wizard-step-short {
-  color: #f8fafc;
+  color: var(--text-main);
 }
 
 .wizard-step-arrow {

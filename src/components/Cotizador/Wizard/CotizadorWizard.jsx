@@ -9,7 +9,7 @@
 // El presupuesto que se le entrega al cliente se arma fuera de la app con la
 // herramienta del proveedor. JureFinance registra los números reales.
 import React, { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, Wallet, Receipt } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import WizardNav from './WizardNav';
 import StepDatosViaje from './steps/StepDatosViaje';
 import StepServicios from './steps/StepServicios';
@@ -19,15 +19,13 @@ import {
   construirPasos,
   normalizarServicios,
   totalVentaItems,
-  totalCostoItems,
-  totalGananciaItems,
-  margenVentaItems,
-  costoCompraItem,
+  totalCostoItems,  costoCompraItem,
   ofertaCompraDe,
   sembrarPreciosVenta,
   formatoMoneda
 } from './wizardUtils';
 import './wizard.css';
+import { derivarPagosDesdeCotizaciones } from '../../../services/calendarioService';
 
 export default function CotizadorWizard({
   initialQuote,
@@ -40,6 +38,7 @@ export default function CotizadorWizard({
     initialQuote?.id || `COT-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`
   );
   const [cliente, setCliente] = useState(initialQuote?.cliente || '');
+  const [dniCliente, setDniCliente] = useState(initialQuote?.dniCliente || '');
   const [emailCliente, setEmailCliente] = useState(initialQuote?.emailCliente || '');
   const [telefonoCliente, setTelefonoCliente] = useState(initialQuote?.telefonoCliente || '');
   const [destino, setDestino] = useState(initialQuote?.destino || '');
@@ -56,6 +55,19 @@ export default function CotizadorWizard({
     const existentes = Array.isArray(initialQuote?.pasajeros) ? initialQuote.pasajeros : [];
     return Array.from({ length: cantidad }, (_, i) => existentes[i] || '');
   });
+
+  const [pasajerosDetalle, setPasajerosDetalle] = useState(() => {
+    const cantidad = Math.max(1, Number(initialQuote?.pax) || 2);
+    const existentes = Array.isArray(initialQuote?.pasajerosDetalle) ? initialQuote.pasajerosDetalle : [];
+    return Array.from({ length: cantidad }, (_, i) => ({
+      nombre: existentes[i]?.nombre || (Array.isArray(initialQuote?.pasajeros) ? initialQuote.pasajeros[i] || '' : ''),
+      apellido: existentes[i]?.apellido || '',
+      dni: existentes[i]?.dni || '',
+      pasaporte: existentes[i]?.pasaporte || '',
+      fechaNacimiento: existentes[i]?.fechaNacimiento || '',
+      observaciones: existentes[i]?.observaciones || ''
+    }));
+  });
   const [moneda, setMoneda] = useState(initialQuote?.moneda || 'USD');
   const [estado, setEstado] = useState(initialQuote?.estado || 'Borrador');
   const [notas, setNotas] = useState(initialQuote?.notas || '');
@@ -65,6 +77,13 @@ export default function CotizadorWizard({
     const base = normalizarServicios(initialQuote?.servicios, { pax: initialQuote?.pax || 2 });
     return sembrarPreciosVenta(base, initialQuote?.precioVentaTotalManual);
   });
+
+  const [markupGlobalPct, setMarkupGlobalPct] = useState(
+    Number(initialQuote?.markupGlobalPct) || 20
+  );
+  const [precioVentaPaquete, setPrecioVentaPaquete] = useState(
+    Number(initialQuote?.precioVentaTotalManual) || 0
+  );
 
   const [proveedoresActivos, setProveedoresActivos] = useState(() => {
     if (Array.isArray(initialQuote?.servicios?.proveedores)) {
@@ -97,10 +116,11 @@ export default function CotizadorWizard({
   const pasoActual = pasos[currentIndex];
 
   /* ------------------------------- Totales ----------------------------------- */
-  const totalVenta = totalVentaItems(items);
+  const totalVentaBase = totalVentaItems(items);
+  const totalVenta = precioVentaPaquete > 0 ? precioVentaPaquete : totalVentaBase;
   const totalCosto = totalCostoItems(items);
-  const gananciaRealTotal = totalGananciaItems(items);
-  const margenRealPct = margenVentaItems(items);
+  const gananciaRealTotal = totalVenta - totalCosto;
+  const margenRealPct = totalVenta > 0 ? (gananciaRealTotal / totalVenta) * 100 : 0;
   const totalOptimo = totalVenta;
 
   /* --------------------------- Operaciones sobre líneas ---------------------- */
@@ -126,10 +146,19 @@ export default function CotizadorWizard({
   const handlePaxChange = (valor) => {
     const cantidad = Math.max(1, parseInt(valor, 10) || 1);
     setPax(cantidad);
-    // Mantiene un campo de nombre por pasajero sin borrar los ya cargados.
     setPasajeros((prev) => {
       const siguiente = Array.from({ length: cantidad }, (_, i) => prev[i] || '');
       return siguiente;
+    });
+    setPasajerosDetalle((prev) => {
+      return Array.from({ length: cantidad }, (_, i) => prev[i] || {
+        nombre: '',
+        apellido: '',
+        dni: '',
+        pasaporte: '',
+        fechaNacimiento: '',
+        observaciones: ''
+      });
     });
   };
 
@@ -193,6 +222,7 @@ export default function CotizadorWizard({
   const construirCotizacion = () => ({
     id: quoteId,
     cliente,
+    dniCliente,
     emailCliente,
     telefonoCliente,
     destino,
@@ -201,9 +231,11 @@ export default function CotizadorWizard({
     fechaCotizacion,
     pax: paxCount,
     pasajeros: pasajeros.map((p) => String(p || '').trim()).filter(Boolean),
+    pasajerosDetalle,
     moneda,
     estado,
     notas,
+    markupGlobalPct,
     servicios: construirServicios(),
     // Totales: venta = lo que paga el cliente; costo = lo que paga la agencia.
     totalNeto: totalCosto,
@@ -223,10 +255,35 @@ export default function CotizadorWizard({
     }
     setValidationError('');
 
+    const cotizacionGuardada = construirCotizacion();
+
     if (onSaveQuote) {
-      onSaveQuote(construirCotizacion());
+      onSaveQuote(cotizacionGuardada);
       setSaveSuccessMessage(true);
       setTimeout(() => setSaveSuccessMessage(false), 3000);
+
+      try {
+        const pagos = derivarPagosDesdeCotizaciones([cotizacionGuardada], configMensual);
+        const primerPago = pagos.find((p) => p.fechaVencimiento);
+        if (primerPago) {
+          window.dispatchEvent(
+            new CustomEvent('jf:toast', {
+              detail: {
+                message: `Cotizacion guardada. Obligacion de pago: ${primerPago.fechaVencimiento} por ${formatoMoneda(primerPago.moneda, primerPago.montoTotal)}`,
+                type: 'success'
+              }
+            })
+          );
+        } else {
+          window.dispatchEvent(
+            new CustomEvent('jf:toast', { detail: { message: 'Cotizacion guardada.', type: 'success' } })
+          );
+        }
+      } catch {
+        window.dispatchEvent(
+          new CustomEvent('jf:toast', { detail: { message: 'Cotizacion guardada.', type: 'success' } })
+        );
+      }
     }
   };
 
@@ -235,88 +292,6 @@ export default function CotizadorWizard({
   /* ------------------------------- Render ------------------------------------ */
   return (
     <div className="wizard-form-wrap">
-      <div className="card" style={{ padding: '16px 22px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span className="badge badge-info" style={{ gap: '6px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--neon-cyan)' }} />
-                Cotizador Wizard
-              </span>
-              <span style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                {quoteId}
-              </span>
-            </div>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginTop: '5px', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-              {cliente ? `Cotización para ${cliente}` : 'Nueva Cotización'}
-            </h2>
-          </div>
-
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <div
-              style={{
-                padding: '9px 15px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border)',
-                textAlign: 'right',
-                minWidth: '125px'
-              }}
-            >
-              <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', fontWeight: 600 }}>
-                <Receipt size={12} color="var(--neon-cyan)" /> Venta
-              </div>
-              <div style={{ fontSize: '1.08rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-main)', marginTop: '2px' }}>
-                {formatoMoneda(moneda, totalVenta)}
-              </div>
-            </div>
-
-            <div
-              style={{
-                padding: '9px 15px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border)',
-                textAlign: 'right',
-                minWidth: '125px'
-              }}
-            >
-              <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', fontWeight: 600 }}>
-                <Wallet size={12} color="var(--primary-light)" /> Costo Real
-              </div>
-              <div style={{ fontSize: '1.08rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {formatoMoneda(moneda, totalCosto)}
-              </div>
-            </div>
-
-            <div
-              style={{
-                padding: '9px 15px',
-                borderRadius: 'var(--radius-md)',
-                background: gananciaRealTotal >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'var(--danger-bg)',
-                border: `1px solid ${gananciaRealTotal >= 0 ? 'rgba(16, 185, 129, 0.35)' : 'var(--danger-border)'}`,
-                textAlign: 'right',
-                minWidth: '130px'
-              }}
-            >
-              <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: gananciaRealTotal >= 0 ? '#34d399' : 'var(--neon-pink)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', fontWeight: 600 }}>
-                <TrendingUp size={12} /> Ganancia Neta
-              </div>
-              <div
-                style={{
-                  fontSize: '1.08rem',
-                  fontWeight: 700,
-                  fontFamily: 'var(--font-mono)',
-                  color: gananciaRealTotal >= 0 ? '#34d399' : 'var(--neon-pink)',
-                  marginTop: '2px'
-                }}
-              >
-                {formatoMoneda(moneda, gananciaRealTotal)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <WizardNav
         steps={pasos}
@@ -346,6 +321,7 @@ export default function CotizadorWizard({
           <StepDatosViaje
             {...{
               cliente, setCliente,
+              dniCliente, setDniCliente,
               emailCliente, setEmailCliente,
               telefonoCliente, setTelefonoCliente,
               destino, setDestino,
@@ -354,6 +330,7 @@ export default function CotizadorWizard({
               fechaCotizacion, setFechaCotizacion,
               pax, setPax: handlePaxChange,
               pasajeros, setPasajeros,
+              pasajerosDetalle, setPasajerosDetalle,
               moneda, setMoneda,
               estado, setEstado,
               notas, setNotas
@@ -391,6 +368,11 @@ export default function CotizadorWizard({
               items,
               totalVenta,
               totalCosto,
+              totalNeto: totalCosto,
+              markupGlobalPct,
+              setMarkupGlobalPct,
+              precioVentaPaquete,
+              setPrecioVentaPaquete,
               gananciaRealTotal,
               margenRealPct,
               onToggleItem: alternarItem,

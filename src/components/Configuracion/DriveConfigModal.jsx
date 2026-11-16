@@ -3,8 +3,6 @@ import React, { useState } from 'react';
 import {
   HardDrive,
   Link2,
-  Copy,
-  Check,
   CheckCircle2,
   AlertCircle,
   Shield,
@@ -21,14 +19,12 @@ import {
   saveDriveConfig,
   syncBidirectionalWithDrive
 } from '../../services/driveService';
-import { APPS_SCRIPT_V3_SOURCE } from '../../services/appsScriptSource';
 
 export default function DriveConfigModal({ onClose }) {
   const currentConfig = getDriveConfig();
 
   const [appsScriptUrl, setAppsScriptUrl] = useState(currentConfig.appsScriptUrl || '');
   const [clientId, setClientId] = useState(currentConfig.clientId || '');
-  const [copiedCode, setCopiedCode] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -74,12 +70,6 @@ export default function DriveConfigModal({ onClose }) {
       setSaveSuccess(false);
       if (onClose) onClose();
     }, 1200);
-  };
-
-  const handleCopyScript = () => {
-    navigator.clipboard.writeText(APPS_SCRIPT_V3_SOURCE);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
   };
 
   return (

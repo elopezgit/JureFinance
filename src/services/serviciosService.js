@@ -289,7 +289,6 @@ export function createEmptyItem(tipo, { proveedorId = '', proveedor = '', fechaR
       fechaReserva: fechaReserva || '',
       fechaEmision: '',
       reglaVencimiento: 'bcp',
-      plazoPagoHoras: 48,
       tramos: []
     };
   }
@@ -319,8 +318,7 @@ export function createEmptyItem(tipo, { proveedorId = '', proveedor = '', fechaR
     ofertaCompraId: oferta.id,
     estadoReserva: 'Reservado',
     fechaReserva: fechaReserva || '',
-    reglaVencimiento: 'bcp',
-    plazoPagoHoras: 48
+    reglaVencimiento: 'semanaAntesViaje'
   };
 }
 
@@ -402,11 +400,7 @@ export function normalizarItem(item) {
       ? item.tramos.map((tramo) => ({ ...createEmptyTramo(), ...tramo }))
       : [];
 
-    const plazoHoras = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
-    const reglaVencimiento =
-      item.reglaVencimiento === '24-48hs' || item.reglaVencimiento === 'bcp'
-        ? item.reglaVencimiento
-        : 'bcp';
+    const reglaVencimiento = 'bcp';
 
     return {
       ...base,
@@ -415,23 +409,15 @@ export function normalizarItem(item) {
       fechaReserva: item.fechaReserva || '',
       fechaEmision: item.fechaEmision || '',
       reglaVencimiento,
-      plazoPagoHoras: plazoHoras,
       tramos
     };
   }
-
-  const plazoTerrestre = Number(item.plazoPagoHoras) === 24 ? 24 : 48;
-  const reglaTerrestre =
-    item.reglaVencimiento === '24-48hs' || item.reglaVencimiento === 'bcp'
-      ? item.reglaVencimiento
-      : 'bcp';
 
   return {
     ...base,
     estadoReserva: item.estadoReserva || 'Reservado',
     fechaReserva: item.fechaReserva || item.fechaEmision || '',
-    reglaVencimiento: reglaTerrestre,
-    plazoPagoHoras: plazoTerrestre
+    reglaVencimiento: 'semanaAntesViaje'
   };
 }
 

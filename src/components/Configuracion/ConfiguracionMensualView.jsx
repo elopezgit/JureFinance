@@ -38,6 +38,7 @@ import {
 } from '../../services/ttoService';
 import { formatFechaLarga } from '../../services/calendarioService';
 import { normalizarServicios } from '../../services/serviciosService';
+import ConfirmDialog from '../Common/ConfirmDialog';
 import { buildBloquesMes } from '../../data/initialData';
 
 const PALETA = ['#3b82f6', '#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ec4899', '#ef4444'];
@@ -61,6 +62,7 @@ export default function ConfiguracionMensualView({
   );
   const [bloques, setBloques] = useState([]);
   const [errors, setErrors] = useState([]);
+  const [confirmacion, setConfirmacion] = useState(null);
   const [warnings, setWarnings] = useState([]);
   const [successMsg, setSuccessMsg] = useState('');
   const [regla, setRegla] = useState({
@@ -191,7 +193,7 @@ export default function ConfiguracionMensualView({
    * Renueva / guarda de una sola vez los 2 meses del bimestre activo (ej. Noviembre + Diciembre)
    * con la tabla oficial de 4 umbrales de emisión de Aero (Cuenta Corriente).
    */
-  const handleRenovarBimestreAero = () => {
+  const ejecutarRenovarBimestre = () => {
     const [m1, m2] = getBimestreDeMes(mes);
     const b1 = buildBloquesMes(m1);
     const b2 = buildBloquesMes(m2);
@@ -222,6 +224,14 @@ export default function ConfiguracionMensualView({
       `Se renovó el bimestre completo (${formatBimestreLabel(mes)}) para ${proveedorActivo} con los 4 umbrales oficiales (01-07, 08-15, 16-22, 23-fin).`
     );
   };
+
+  const handleRenovarBimestreAero = () => setConfirmacion({
+    titulo: 'Renovar bimestre',
+    mensaje: `¿Renovar la configuración de ${proveedorActivo} para ${formatBimestreLabel(mes)}?`,
+    warning: 'Se reemplazarán los bloques de ambos meses con los 4 umbrales oficiales (01-07, 08-15, 16-22, 23-fin).',
+    etiqueta: 'Renovar bimestre',
+    accion: ejecutarRenovarBimestre
+  });
 
   const handleCopyPrevMonth = () => {
     const prevMes = shiftMes(mes, -1);
@@ -302,7 +312,7 @@ export default function ConfiguracionMensualView({
     );
   };
 
-  const handleApplyAllProviders = () => {
+  const ejecutarApplyAllProviders = () => {
     const validation = validateBloques(bloques, mes);
     if (!validation.ok) {
       setErrors(validation.errors);
@@ -340,8 +350,15 @@ export default function ConfiguracionMensualView({
     );
   };
 
-  const handleDelete = () => {
-    if (!window.confirm(`¿Eliminar la configuración de ${formatMesLabel(mes)}?`)) return;
+  const handleApplyAllProviders = () => setConfirmacion({
+    titulo: 'Aplicar a todos los proveedores',
+    mensaje: `¿Aplicar los bloques de ${formatMesLabel(mes)} a los ${proveedores.length} proveedores?`,
+    warning: 'Se sobrescribirá la configuración de ese mes para todos los proveedores.',
+    etiqueta: 'Aplicar a todos',
+    accion: ejecutarApplyAllProviders
+  });
+
+  const ejecutarDelete = () => {
     const updated = configMensual.filter(
       (c) => !(c.mes === mes && normalizeProveedorId(c.proveedorId) === pidActual)
     );
@@ -351,6 +368,14 @@ export default function ConfiguracionMensualView({
     setWarnings([]);
     setSuccessMsg(`Configuración de ${formatMesLabel(mes)} eliminada.`);
   };
+
+  const handleDelete = () => setConfirmacion({
+    titulo: 'Eliminar configuración',
+    mensaje: `¿Eliminar la configuración de ${proveedorActivo} para ${formatMesLabel(mes)}?`,
+    warning: 'Las fechas de pago de ese proveedor y mes volverán a derivarse de la plantilla por defecto.',
+    etiqueta: 'Eliminar configuración',
+    accion: ejecutarDelete
+  });
 
   const proveedorActivo =
     proveedores.find((p) => normalizeProveedorId(p.id) === pidActual)?.nombre ||
@@ -437,10 +462,19 @@ export default function ConfiguracionMensualView({
               <div
                 key={m}
                 onClick={() => setMes(m)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setMes(m);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={esMesSeleccionado}
                 style={{
                   padding: '14px 16px',
                   borderRadius: 'var(--radius-md)',
-                  background: esMesSeleccionado ? 'var(--bg-subtle)' : 'rgba(15, 23, 42, 0.45)',
+                  background: esMesSeleccionado ? 'var(--bg-subtle)' : 'var(--bg-inset)',
                   border: `1px solid ${esMesSeleccionado ? 'var(--primary)' : 'var(--border)'}`,
                   cursor: 'pointer'
                 }}
@@ -1024,6 +1058,19 @@ export default function ConfiguracionMensualView({
           })}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(confirmacion)}
+        title={confirmacion?.titulo || 'Confirmar acción'}
+        message={confirmacion?.mensaje || ''}
+        warning={confirmacion?.warning}
+        confirmLabel={confirmacion?.etiqueta || 'Confirmar'}
+        onConfirm={() => {
+          confirmacion?.accion?.();
+          setConfirmacion(null);
+        }}
+        onCancel={() => setConfirmacion(null)}
+      />
     </div>
   );
 }

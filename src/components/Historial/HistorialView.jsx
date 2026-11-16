@@ -2,16 +2,9 @@
 import React, { useState } from 'react';
 import {
   Search,
-  Filter,
-  Eye,
-  Edit,
+  Filter,  Edit,
   Trash2,
-  Copy,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-  Users,
+  Copy,  Users,
   MapPin,
   Calendar,
   FolderOpen
@@ -30,10 +23,12 @@ export default function HistorialView({
 
   // Filter quotes
   const filteredQuotes = cotizaciones.filter((q) => {
+    const term = searchTerm.toLowerCase();
     const matchesSearch =
-      q.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.destino.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.id.toLowerCase().includes(searchTerm.toLowerCase());
+      (q.cliente || '').toLowerCase().includes(term) ||
+      (q.dniCliente || '').toLowerCase().includes(term) ||
+      (q.destino || '').toLowerCase().includes(term) ||
+      (q.id || '').toLowerCase().includes(term);
 
     const matchesStatus = statusFilter === 'TODOS' || q.estado === statusFilter;
 
@@ -102,7 +97,7 @@ export default function HistorialView({
               <input
                 type="text"
                 className="input-field input-with-prefix"
-                placeholder="Buscar por cliente, destino o ID de cotización..."
+                placeholder="Buscar por cliente, DNI, destino o ID de cotización..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

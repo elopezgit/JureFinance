@@ -13,21 +13,14 @@ import {
   RefreshCw,
   Search,
   Plus,
-  Trash2,
-  Download,
   Eye,
   CheckCircle2,
   HardDrive,
-  Edit2,
   X,
   ChevronRight,
   ArrowLeft,
-  Filter,
   SlidersHorizontal,
   FolderTree,
-  Calendar,
-  Clock,
-  Lock,
   ShieldCheck,
   Settings
 } from 'lucide-react';
@@ -37,9 +30,7 @@ import {
   getAllClientFiles,
   getFilesForClient,
   uploadFileToTargetFolder,
-  deleteClientFile,
   renameClientFile,
-  deleteClientFolder,
   createClientDriveFolder,
   createSubfolderInDrive,
   fetchLiveDriveTree,
@@ -48,9 +39,11 @@ import {
 } from '../../services/driveService';
 import { APPS_SCRIPT_V3_SOURCE } from '../../services/appsScriptSource';
 
-export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConfig, onOpenConfig }) {
-  // Client selection & search
-  const [currentClient, setCurrentClient] = useState(selectedClientName || 'PELAO DAUD');
+export default function DriveView({ selectedClientName = '', driveConfig, onOpenConfig }) {
+  // Client selection & search: nunca un nombre de ejemplo quemado en el código.
+  const [currentClient, setCurrentClient] = useState(
+    () => selectedClientName || getAllClientFiles()[0] || ''
+  );
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [clientFilterType, setClientFilterType] = useState('ALL'); // 'ALL' | 'WITH_FILES' | 'EMPTY'
 
@@ -436,16 +429,6 @@ export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConf
     setCurrentClient(created.cliente);
     setNewClientInput('');
     setShowNewClientModal(false);
-  };
-
-  // Delete File
-  const handleDeleteFile = async (fileId) => {
-    alert('Protección de Fuente Única activa: Los archivos existentes de Google Drive están protegidos contra eliminación para resguardar la información de la agencia.');
-  };
-
-  // Delete Client Folder
-  const handleDeleteClientFolder = async (cName) => {
-    alert(`Protección de Fuente Única activa: La carpeta de "${cName}" pertenece a Google Drive y está protegida contra eliminación.`);
   };
 
   // Rename File
@@ -922,7 +905,16 @@ export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConf
                 {currentSubfolders.map((sub) => (
                   <div
                     key={sub.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Abrir carpeta ${sub.name}`}
                     onClick={() => handleEnterSubfolder(sub)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleEnterSubfolder(sub);
+                      }
+                    }}
                     style={{
                       padding: '12px 14px',
                       borderRadius: 'var(--radius-md)',
@@ -1237,6 +1229,8 @@ export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConf
               <button
                 onClick={() => setShowUploadModal(false)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                aria-label="Cerrar ventana"
+                title="Cerrar"
               >
                 <X size={18} />
               </button>
@@ -1252,6 +1246,9 @@ export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConf
                 />
 
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Seleccionar archivo para subir"
                   style={{
                     border: '2px dashed var(--border-strong)',
                     borderRadius: 'var(--radius-md)',
@@ -1261,6 +1258,12 @@ export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConf
                     cursor: 'pointer'
                   }}
                   onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      fileInputRef.current?.click();
+                    }
+                  }}
                 >
                   <Upload size={28} color="var(--primary)" style={{ margin: '0 auto 6px' }} />
                   <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: '0 0 4px', color: 'var(--text-main)' }}>
@@ -1337,6 +1340,8 @@ export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConf
               <button
                 onClick={() => setShowNewFolderModal(false)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                aria-label="Cerrar ventana"
+                title="Cerrar"
               >
                 <X size={18} />
               </button>
@@ -1377,6 +1382,8 @@ export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConf
               <button
                 onClick={() => setShowNewClientModal(false)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                aria-label="Cerrar ventana"
+                title="Cerrar"
               >
                 <X size={18} />
               </button>
@@ -1417,6 +1424,8 @@ export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConf
               <button
                 onClick={() => setRenameTarget(null)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                aria-label="Cerrar ventana"
+                title="Cerrar"
               >
                 <X size={18} />
               </button>
@@ -1463,6 +1472,8 @@ export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConf
               <button
                 onClick={() => setPreviewFile(null)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                aria-label="Cerrar ventana"
+                title="Cerrar"
               >
                 <X size={18} />
               </button>
@@ -1532,6 +1543,8 @@ export default function DriveView({ selectedClientName = 'PELAO DAUD', driveConf
               <button
                 onClick={() => setShowScriptHelpModal(false)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                aria-label="Cerrar ventana"
+                title="Cerrar"
               >
                 <X size={18} />
               </button>

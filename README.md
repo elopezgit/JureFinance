@@ -19,9 +19,17 @@ npm install
 npm run dev          # servidor de desarrollo (http://localhost:5173)
 npm run build        # build de producción en dist/
 npm run preview      # sirve el build
-npm run lint         # oxlint
-npm run test:modelo  # pruebas del modelo de servicios y de la agenda de pagos
+npm run lint              # oxlint
+npm run test:modelo       # modelo de servicios y agenda de pagos
+npm run test:ui           # render SSR del cotizador
+npm run test:runtime      # pruebas de runtime
+npm run test:cobros       # imputación multi-moneda y análisis del modal de cobros
+npm run test:vista-cobros # render SSR de la vista de cobros
 ```
+
+> Si `oxlint` o Vite fallan con `memory allocation ... failed`, ejecutalos con
+> `npx oxlint --threads=1` (o cerrá otras apps: es un error de memoria del
+> entorno, no del código).
 
 ## Módulos
 

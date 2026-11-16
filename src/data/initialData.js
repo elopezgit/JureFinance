@@ -2,36 +2,14 @@
 import { DEMO_VUELOS_EMITIDOS } from './demoVuelos';
 
 export const INITIAL_OPERADORES = [
-  {
-    id: 'aero',
-    nombre: 'Aero',
-    categoria: 'Aéreos',
-    prestaciones: ['Aéreos'],
-    descripcion: 'Operador mayorista de pasajes aéreos (#TurismoConfiable). Liquida emisiones en cuenta corriente según tabla de umbrales semanales que se renueva cada 2 meses (bimestral).',
-    tiempoEsperaPromedio: 'Por umbrales de emisión (01-07, 08-15, 16-22, 23 al fin de mes · renovación cada 2 meses)',
-    contacto: 'operaciones@aero.tur.ar',
-    badgeColor: 'badge-info'
-  },
-  {
-    id: 'price',
-    nombre: 'Price',
-    categoria: 'Multiservicio',
-    prestaciones: ['Hotel', 'Traslados', 'Asistencia al Viajero'],
-    descripcion: 'Operador mayorista para reservas hoteleras, traslados privados/regulares y seguros de asistencia.',
-    tiempoEsperaPromedio: 'Según fecha límite de pago de reserva o grilla configurada',
-    contacto: 'reservas@price.com',
-    badgeColor: 'badge-warning'
-  },
-  {
-    id: 'azabache',
-    nombre: 'Azabache',
-    categoria: 'Multiservicio',
-    prestaciones: ['Hotel', 'Traslados', 'Asistencia al Viajero'],
-    descripcion: 'Consolidador mayorista y constructor de presupuestos PDF para el cliente final (vuelo de referencia + hotel + traslados confirmados).',
-    tiempoEsperaPromedio: 'Según fecha de reserva confirmada o vencimiento del voucher',
-    contacto: 'grupos@azabache.com',
-    badgeColor: 'badge-success'
-  }
+  { id: 'aero', nombre: 'Aero', categoria: 'Aereos', prestaciones: ['Aereos'], descripcion: 'Operador mayorista de pasajes aereos.', tiempoEsperaPromedio: 'Segun umbrales de emision', contacto: 'operaciones@aero.tur.ar', badgeColor: 'badge-info' },
+  { id: 'azabache', nombre: 'Azabache', categoria: 'Multiservicio', prestaciones: ['Hotel', 'Traslados', 'Asistencia'], descripcion: 'Consolidador mayorista y constructor de presupuestos PDF.', tiempoEsperaPromedio: 'Segun fecha de reserva', contacto: 'grupos@azabache.com', badgeColor: 'badge-success' },
+  { id: 'price', nombre: 'Priceagencies', categoria: 'Multiservicio', prestaciones: ['Hotel', 'Traslados', 'Asistencia'], descripcion: 'Operador mayorista multiservicio.', tiempoEsperaPromedio: 'Segun fecha de reserva', contacto: 'reservas@price.com', badgeColor: 'badge-warning' },
+  { id: 'hoteldo', nombre: 'HotelDo', categoria: 'Hoteles', prestaciones: ['Hotel'], descripcion: 'Operador hotelero.', tiempoEsperaPromedio: 'Segun fecha de reserva', contacto: 'reservas@hoteldo.com', badgeColor: 'badge-info' },
+  { id: 'toselli', nombre: 'Toselli', categoria: 'Multiservicio', prestaciones: ['Hotel', 'Traslados'], descripcion: 'Operador mayorista.', tiempoEsperaPromedio: 'Segun fecha de reserva', contacto: 'reservas@toselli.com', badgeColor: 'badge-neutral' },
+  { id: 'riupro', nombre: 'Riupro', categoria: 'Hoteles', prestaciones: ['Hotel'], descripcion: 'Operador hotelero Riu.', tiempoEsperaPromedio: 'Segun fecha de reserva', contacto: 'reservas@riupro.com', badgeColor: 'badge-info' },
+  { id: 'meliapro', nombre: 'Meliapro', categoria: 'Hoteles', prestaciones: ['Hotel'], descripcion: 'Operador hotelero Melia.', tiempoEsperaPromedio: 'Segun fecha de reserva', contacto: 'reservas@meliapro.com', badgeColor: 'badge-info' },
+  { id: 'iberostarpro', nombre: 'Iberostarpro', categoria: 'Hoteles', prestaciones: ['Hotel'], descripcion: 'Operador hotelero Iberostar.', tiempoEsperaPromedio: 'Segun fecha de reserva', contacto: 'reservas@iberostarpro.com', badgeColor: 'badge-info' }
 ];
 
 const COTIZACIONES_BASE = [
@@ -360,7 +338,7 @@ export function buildBloquesMes(mes) {
 export function buildConfiguracionMensual(meses = []) {
   const unicos = [...new Set((meses || []).filter(Boolean))];
   return unicos.flatMap((mes) =>
-    ['aero', 'price', 'azabache'].map((proveedorId) => ({
+    ['aero', 'azabache', 'price', 'hoteldo', 'toselli', 'riupro', 'meliapro', 'iberostarpro'].map((proveedorId) => ({
       mes,
       proveedorId,
       bloques: buildBloquesMes(mes)
