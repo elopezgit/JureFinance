@@ -15,6 +15,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { normalizarServicios, SECCION_LABEL } from '../../services/serviciosService';
+import heroLayers from '../../assets/hero.svg';
 
 export default function DashboardView({
   cotizaciones = [],
@@ -95,6 +96,26 @@ export default function DashboardView({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Identidad: las tres capas del negocio */}
+      <section className="jf-hero" aria-label="Cómo funciona JureFinance">
+        <img className="jf-hero-art" src={heroLayers} alt="Dos capas superpuestas" />
+        <div className="jf-hero-copy">
+          <span className="jf-hero-eyebrow">El método JureTravel</span>
+          <h2 className="jf-hero-title">Cada viaje tiene tres capas</h2>
+          <p className="jf-hero-text">
+            Lo que se le vende al cliente, lo que realmente cuesta con el proveedor y lo que se cobra
+            al final. Acá las tres conviven en un mismo lugar, sin hojas sueltas ni números que se pierden.
+          </p>
+          {onNavigateToCotizador && (
+            <div className="jf-hero-actions">
+              <button className="btn btn-primary btn-sm" onClick={onNavigateToCotizador}>
+                <Plane size={15} /> Registrar una cotización
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* KPIs */}
       <div className="metrics-strip">
         <div className="metric-card">

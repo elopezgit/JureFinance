@@ -468,6 +468,8 @@ const cotizacionJureTravel = {
   pax: 2,
   moneda: 'USD',
   fechaCotizacion: '2026-11-03',
+  // Los servicios terrestres vencen 7 días antes del viaje (no usan BCP).
+  fechaViajeInicio: '2026-11-20',
   servicios: {
     items: [
       {
@@ -541,14 +543,16 @@ check(
   `=> ${pagoVueloJT?.fechaVencimiento} (${pagoVueloJT?.origenVencimiento})`
 );
 check(
-  'JT: hotel reservado el 03/11 vence el 13/11',
-  pagoHotelJT?.fechaVencimiento === '2026-11-13' && pagoHotelJT?.origenVencimiento === 'bcp',
-  `=> ${pagoHotelJT?.fechaVencimiento}`
+  'JT: hotel vence 7 días antes del viaje (13/11)',
+  pagoHotelJT?.fechaVencimiento === '2026-11-13' &&
+    pagoHotelJT?.origenVencimiento === 'semana-antes-viaje',
+  `=> ${pagoHotelJT?.fechaVencimiento} (${pagoHotelJT?.origenVencimiento})`
 );
 check(
-  'JT: traslado reservado el 04/11 vence el 13/11',
-  pagoTrasJT?.fechaVencimiento === '2026-11-13' && pagoTrasJT?.origenVencimiento === 'bcp',
-  `=> ${pagoTrasJT?.fechaVencimiento}`
+  'JT: traslado vence 7 días antes del viaje (13/11)',
+  pagoTrasJT?.fechaVencimiento === '2026-11-13' &&
+    pagoTrasJT?.origenVencimiento === 'semana-antes-viaje',
+  `=> ${pagoTrasJT?.fechaVencimiento} (${pagoTrasJT?.origenVencimiento})`
 );
 
 console.log(fallas === 0 ? '\nTODO OK' : `\n${fallas} FALLAS`);

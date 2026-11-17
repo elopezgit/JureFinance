@@ -1,82 +1,102 @@
 /* ==========================================================================
-   JUREFINANCE — SISTEMA DE DISEÑO EJECUTIVO & FINTECH (SLATE LIGHT / DARK)
-   Diseño limpio, legible, sin sobrecarga visual y enfocado en usabilidad
+   JUREFINANCE — IDENTIDAD "LIBRO DE CONTABILIDAD ARTESANAL"
+   Papel, tinta y sello: terracota de marca + bosque para el dinero ganado.
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
 
 /* --------------------------------------------------------------------------
-   1. TOKENS DE DISEÑO (TEMA SLATE PROFUNDO, LIMPIO Y DESCANSADO)
+   1. TOKENS DE DISEÑO (PAPEL CÁLIDO / NOCHE CÁLIDA)
    -------------------------------------------------------------------------- */
 :root {
-  /* Tema claro por defecto */
-  --bg-main: #f8fafc;
-  --bg-main-gradient: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-  --bg-surface: #ffffff;
-  --bg-surface-elevated: #f1f5f9;
-  --bg-surface-hover: #e2e8f0;
-  --bg-subtle: #f1f5f9;
-  --bg-inset: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-card-border: rgba(15, 23, 42, 0.08);
-  --bg-card-border-hover: rgba(15, 23, 42, 0.16);
-  --bg-card-border-focus: rgba(37, 99, 235, 0.45);
-  --border: rgba(15, 23, 42, 0.10);
-  --border-strong: rgba(15, 23, 42, 0.18);
+  /* Papel: neutros con temperatura, sin slate */
+  --bg-main: #f7f2e9;
+  --bg-main-gradient: linear-gradient(180deg, #faf6ee 0%, #efe7d9 100%);
+  --bg-surface: #fffdf9;
+  --bg-surface-elevated: #f5eee3;
+  --bg-surface-hover: #ece1d1;
+  --bg-subtle: #f5eee3;
+  --bg-inset: #f0e8da;
+  --bg-card: #fffdf9;
+  --bg-card-border: rgba(66, 50, 38, 0.12);
+  --bg-card-border-hover: rgba(66, 50, 38, 0.22);
+  --bg-card-border-focus: rgba(180, 83, 59, 0.45);
+  --border: rgba(66, 50, 38, 0.13);
+  --border-strong: rgba(66, 50, 38, 0.23);
 
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-light: #3b82f6;
-  --primary-soft: rgba(37, 99, 235, 0.10);
-  --primary-border: rgba(37, 99, 235, 0.30);
-  --primary-glow: rgba(37, 99, 235, 0.12);
+  /* Terracota: color de marca, protagonista único */
+  --primary: #b4533b;
+  --primary-hover: #9a3f2b;
+  --primary-light: #c96a4f;
+  --primary-soft: rgba(180, 83, 59, 0.10);
+  --primary-border: rgba(180, 83, 59, 0.30);
+  --primary-glow: rgba(180, 83, 59, 0.14);
 
-  --neon-cyan: #0284c7;
-  --neon-cyan-hover: #0369a1;
-  --neon-cyan-glow: rgba(2, 132, 199, 0.12);
-  --neon-cyan-soft: rgba(2, 132, 199, 0.08);
-  --neon-cyan-border: rgba(2, 132, 199, 0.30);
+  /* Petróleo: información y enlaces (frío pero apagado, no compite) */
+  --neon-cyan: #3f6b73;
+  --neon-cyan-hover: #33575e;
+  --neon-cyan-glow: rgba(63, 107, 115, 0.12);
+  --neon-cyan-soft: rgba(63, 107, 115, 0.08);
+  --neon-cyan-border: rgba(63, 107, 115, 0.28);
 
-  --neon-pink: #e11d48;
-  --neon-pink-hover: #be123c;
-  --neon-pink-glow: rgba(225, 29, 72, 0.12);
-  --neon-pink-soft: rgba(225, 29, 72, 0.08);
-  --neon-pink-border: rgba(225, 29, 72, 0.30);
+  /* Arcilla: vencido / peligro */
+  --neon-pink: #8c2f22;
+  --neon-pink-hover: #74261b;
+  --neon-pink-glow: rgba(140, 47, 34, 0.12);
+  --neon-pink-soft: rgba(140, 47, 34, 0.08);
+  --neon-pink-border: rgba(140, 47, 34, 0.28);
 
-  --neon-amber: #d97706;
-  --neon-amber-glow: rgba(217, 119, 6, 0.12);
-  --neon-amber-soft: rgba(217, 119, 6, 0.08);
+  /* Mostaza tinta: avisos */
+  --neon-amber: #8a5a16;
+  --neon-amber-glow: rgba(138, 90, 22, 0.12);
+  --neon-amber-soft: rgba(138, 90, 22, 0.08);
 
-  --neon-emerald: #059669;
-  --neon-emerald-glow: rgba(5, 150, 105, 0.12);
+  /* Bosque: dinero cobrado y ganancia */
+  --neon-emerald: #2f5d50;
+  --neon-emerald-glow: rgba(47, 93, 80, 0.14);
 
-  --accent-gradient: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
-  --magenta-gradient: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
-  --cyan-gradient: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  --gold-gradient: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  --emerald-gradient: linear-gradient(135deg, #059669 0%, #047857 100%);
+  /* Un solo gradiente con intención: terracota → arcilla → brillo dorado */
+  --accent-gradient: linear-gradient(120deg, #b4533b 0%, #8c2f22 58%, #a85e2d 100%);
+  --magenta-gradient: linear-gradient(135deg, #8c2f22 0%, #74261b 100%);
+  --cyan-gradient: linear-gradient(135deg, #3f6b73 0%, #33575e 100%);
+  --gold-gradient: linear-gradient(135deg, #a86a28 0%, #8a5a16 100%);
+  --emerald-gradient: linear-gradient(135deg, #2f5d50 0%, #244a40 100%);
+  --paper-gradient: linear-gradient(180deg, #fffdf9 0%, #f7f0e4 100%);
 
-  --text-main: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-inverse: #ffffff;
+  /* Grano de papel: textura orgánica muy tenue */
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.22'/%3E%3C/svg%3E");
 
-  --success: #059669;
-  --success-hover: #047857;
-  --success-bg: rgba(5, 150, 105, 0.10);
-  --success-border: rgba(5, 150, 105, 0.28);
+  /* Tinta */
+  --text-main: #2a2622;
+  --text-secondary: #574e45;
+  --text-muted: #8a7e72;
+  --text-inverse: #fffdf9;
 
-  --warning: #d97706;
-  --warning-bg: rgba(217, 119, 6, 0.10);
-  --warning-border: rgba(217, 119, 6, 0.28);
+  --success: #2f5d50;
+  --success-hover: #244a40;
+  --success-bg: rgba(47, 93, 80, 0.10);
+  --success-border: rgba(47, 93, 80, 0.28);
 
-  --danger: #e11d48;
-  --danger-bg: rgba(225, 29, 72, 0.10);
-  --danger-border: rgba(225, 29, 72, 0.28);
+  --warning: #8a5a16;
+  --warning-bg: rgba(138, 90, 22, 0.10);
+  --warning-border: rgba(138, 90, 22, 0.28);
 
-  --info: #0284c7;
-  --info-bg: rgba(2, 132, 199, 0.10);
-  --info-border: rgba(2, 132, 199, 0.28);
+  --danger: #8c2f22;
+  --danger-bg: rgba(140, 47, 34, 0.10);
+  --danger-border: rgba(140, 47, 34, 0.28);
+
+  --info: #3f6b73;
+  --info-bg: rgba(63, 107, 115, 0.10);
+  --info-border: rgba(63, 107, 115, 0.28);
+
+  /* Colores para proveedores: misma familia, distinguishable sin ruido */
+  --prov-1: #b4533b;
+  --prov-2: #2f5d50;
+  --prov-3: #8a5a16;
+  --prov-4: #3f6b73;
+  --prov-5: #a85e2d;
+  --prov-6: #6f6152;
+  --prov-7: #8c2f22;
 
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 72px;
@@ -89,13 +109,13 @@
   --radius-xl: 16px;
   --radius-full: 9999px;
 
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.10);
-  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.14);
-  --shadow-glow: 0 2px 8px rgba(37, 99, 235, 0.12);
-  --shadow-glow-cyan: 0 2px 8px rgba(2, 132, 199, 0.12);
-  --shadow-glow-pink: 0 2px 8px rgba(225, 29, 72, 0.12);
+  --shadow-xs: 0 1px 2px rgba(66, 50, 38, 0.06);
+  --shadow-sm: 0 2px 6px rgba(66, 50, 38, 0.08);
+  --shadow-md: 0 6px 18px rgba(66, 50, 38, 0.10);
+  --shadow-lg: 0 12px 32px rgba(66, 50, 38, 0.14);
+  --shadow-glow: 0 2px 8px rgba(180, 83, 59, 0.12);
+  --shadow-glow-cyan: 0 2px 8px rgba(63, 107, 115, 0.12);
+  --shadow-glow-pink: 0 2px 8px rgba(140, 47, 34, 0.12);
 
   --font-heading: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -108,81 +128,92 @@
 }
 
 :root[data-theme="dark"] {
-  --bg-main: #0b0f17;
-  --bg-main-gradient: linear-gradient(180deg, #0b0f17 0%, #0f172a 100%);
-  --bg-surface: #111827;
-  --bg-surface-elevated: #1e293b;
-  --bg-surface-hover: #243247;
-  --bg-subtle: #161f30;
-  --bg-inset: #0d131f;
-  --bg-card: #111827;
-  --bg-card-border: rgba(148, 163, 184, 0.14);
-  --bg-card-border-hover: rgba(148, 163, 184, 0.26);
-  --bg-card-border-focus: rgba(56, 189, 248, 0.55);
-  --border: rgba(148, 163, 184, 0.14);
-  --border-strong: rgba(148, 163, 184, 0.26);
+  /* Noche cálida: carbón con matiz tierra, nunca slate */
+  --bg-main: #191612;
+  --bg-main-gradient: linear-gradient(180deg, #191612 0%, #211c17 100%);
+  --bg-surface: #25211d;
+  --bg-surface-elevated: #302b25;
+  --bg-surface-hover: #3a342d;
+  --bg-subtle: #201c18;
+  --bg-inset: #15120f;
+  --bg-card: #25211d;
+  --bg-card-border: rgba(232, 214, 194, 0.14);
+  --bg-card-border-hover: rgba(232, 214, 194, 0.26);
+  --bg-card-border-focus: rgba(224, 138, 107, 0.55);
+  --border: rgba(232, 214, 194, 0.13);
+  --border-strong: rgba(232, 214, 194, 0.25);
 
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-light: #60a5fa;
-  --primary-soft: rgba(59, 130, 246, 0.12);
-  --primary-border: rgba(59, 130, 246, 0.35);
-  --primary-glow: rgba(59, 130, 246, 0.18);
+  --primary: #e08a6b;
+  --primary-hover: #c97255;
+  --primary-light: #efa88d;
+  --primary-soft: rgba(224, 138, 107, 0.12);
+  --primary-border: rgba(224, 138, 107, 0.35);
+  --primary-glow: rgba(224, 138, 107, 0.18);
 
-  --neon-cyan: #38bdf8;
-  --neon-cyan-hover: #7dd3fc;
-  --neon-cyan-glow: rgba(56, 189, 248, 0.18);
-  --neon-cyan-soft: rgba(56, 189, 248, 0.1);
-  --neon-cyan-border: rgba(56, 189, 248, 0.32);
+  --neon-cyan: #7fb0b5;
+  --neon-cyan-hover: #a3ccd0;
+  --neon-cyan-glow: rgba(127, 176, 181, 0.16);
+  --neon-cyan-soft: rgba(127, 176, 181, 0.10);
+  --neon-cyan-border: rgba(127, 176, 181, 0.30);
 
-  --neon-pink: #f43f5e;
-  --neon-pink-hover: #fb7185;
-  --neon-pink-glow: rgba(244, 63, 94, 0.16);
-  --neon-pink-soft: rgba(244, 63, 94, 0.1);
-  --neon-pink-border: rgba(244, 63, 94, 0.32);
+  --neon-pink: #e08470;
+  --neon-pink-hover: #f0a795;
+  --neon-pink-glow: rgba(224, 132, 112, 0.16);
+  --neon-pink-soft: rgba(224, 132, 112, 0.10);
+  --neon-pink-border: rgba(224, 132, 112, 0.30);
 
-  --neon-amber: #f59e0b;
-  --neon-amber-glow: rgba(245, 158, 11, 0.16);
-  --neon-amber-soft: rgba(245, 158, 11, 0.1);
+  --neon-amber: #d8a35c;
+  --neon-amber-glow: rgba(216, 163, 92, 0.16);
+  --neon-amber-soft: rgba(216, 163, 92, 0.10);
 
-  --neon-emerald: #10b981;
-  --neon-emerald-glow: rgba(16, 185, 129, 0.16);
+  --neon-emerald: #7fb79f;
+  --neon-emerald-glow: rgba(127, 183, 159, 0.16);
 
-  --accent-gradient: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
-  --magenta-gradient: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
-  --cyan-gradient: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  --gold-gradient: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  --emerald-gradient: linear-gradient(135deg, #059669 0%, #047857 100%);
+  --accent-gradient: linear-gradient(120deg, #c96a4f 0%, #8c2f22 60%, #a85e2d 100%);
+  --magenta-gradient: linear-gradient(135deg, #e08470 0%, #b95440 100%);
+  --cyan-gradient: linear-gradient(135deg, #7fb0b5 0%, #4d7d84 100%);
+  --gold-gradient: linear-gradient(135deg, #d8a35c 0%, #a86a28 100%);
+  --emerald-gradient: linear-gradient(135deg, #7fb79f 0%, #3f7a66 100%);
+  --paper-gradient: linear-gradient(180deg, #25211d 0%, #1d1915 100%);
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.3'/%3E%3C/svg%3E");
 
-  --text-main: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --text-inverse: #ffffff;
+  --text-main: #f5efe6;
+  --text-secondary: #d8cfc2;
+  --text-muted: #a89b8b;
+  --text-inverse: #1a1511;
 
-  --success: #10b981;
-  --success-hover: #059669;
-  --success-bg: rgba(16, 185, 129, 0.12);
-  --success-border: rgba(16, 185, 129, 0.3);
+  --success: #7fb79f;
+  --success-hover: #639c85;
+  --success-bg: rgba(127, 183, 159, 0.12);
+  --success-border: rgba(127, 183, 159, 0.30);
 
-  --warning: #f59e0b;
-  --warning-bg: rgba(245, 158, 11, 0.12);
-  --warning-border: rgba(245, 158, 11, 0.3);
+  --warning: #d8a35c;
+  --warning-bg: rgba(216, 163, 92, 0.12);
+  --warning-border: rgba(216, 163, 92, 0.30);
 
-  --danger: #f43f5e;
-  --danger-bg: rgba(244, 63, 94, 0.12);
-  --danger-border: rgba(244, 63, 94, 0.3);
+  --danger: #e08470;
+  --danger-bg: rgba(224, 132, 112, 0.12);
+  --danger-border: rgba(224, 132, 112, 0.30);
 
-  --info: #38bdf8;
-  --info-bg: rgba(56, 189, 248, 0.12);
-  --info-border: rgba(56, 189, 248, 0.3);
+  --info: #7fb0b5;
+  --info-bg: rgba(127, 176, 181, 0.12);
+  --info-border: rgba(127, 176, 181, 0.30);
+
+  --prov-1: #e08a6b;
+  --prov-2: #7fb79f;
+  --prov-3: #d8a35c;
+  --prov-4: #7fb0b5;
+  --prov-5: #e0a05c;
+  --prov-6: #bca88f;
+  --prov-7: #e08470;
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.28);
   --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.32);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.42);
-  --shadow-glow: 0 2px 8px rgba(59, 130, 246, 0.18);
-  --shadow-glow-cyan: 0 2px 8px rgba(56, 189, 248, 0.18);
-  --shadow-glow-pink: 0 2px 8px rgba(244, 63, 94, 0.18);
+  --shadow-glow: 0 2px 8px rgba(180, 83, 59, 0.18);
+  --shadow-glow-cyan: 0 2px 8px rgba(63, 107, 115, 0.18);
+  --shadow-glow-pink: 0 2px 8px rgba(140, 47, 34, 0.18);
 
   color-scheme: dark;
 }
@@ -251,11 +282,11 @@ input[type="number"] {
   background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgba(122, 108, 94, 0.25);
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.42);
+  background: rgba(122, 108, 94, 0.42);
 }
 
 /* --------------------------------------------------------------------------
@@ -265,6 +296,10 @@ input[type="number"] {
   display: flex;
   min-height: 100vh;
   background-color: var(--bg-main);
+  /* Grano de papel sobre el degradado cálido: la textura que da "vida" */
+  background-image: var(--paper-grain), var(--bg-main-gradient);
+  background-repeat: repeat, no-repeat;
+  background-size: 160px 160px, auto;
   position: relative;
 }
 
@@ -347,9 +382,10 @@ input[type="number"] {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-md);
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  color: var(--neon-cyan);
+  background: var(--accent-gradient);
+  border: 1px solid var(--primary-border);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-glow);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -436,14 +472,14 @@ input[type="number"] {
 }
 
 .nav-item:hover {
-  background: rgba(148, 163, 184, 0.08);
+  background: rgba(122, 108, 94, 0.08);
   color: var(--text-main);
 }
 
 .nav-item.active {
-  background: rgba(59, 130, 246, 0.14);
+  background: rgba(180, 83, 59, 0.14);
   color: var(--text-main);
-  border-color: rgba(59, 130, 246, 0.32);
+  border-color: rgba(180, 83, 59, 0.32);
   font-weight: 600;
 }
 
@@ -625,6 +661,20 @@ input[type="number"] {
   gap: 14px;
   margin-bottom: 18px;
   flex-wrap: wrap;
+  position: relative;
+}
+
+/* Pequeño trazo de sello: detalle artesanal en cada encabezado */
+.card-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -9px;
+  width: 34px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent-gradient);
+  opacity: 0.85;
 }
 
 .card-title-group {
@@ -637,8 +687,8 @@ input[type="number"] {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-md);
-  background: rgba(59, 130, 246, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(180, 83, 59, 0.12);
+  border: 1px solid rgba(180, 83, 59, 0.25);
   color: var(--neon-cyan);
   display: flex;
   align-items: center;
@@ -712,7 +762,7 @@ input[type="number"] {
   height: var(--form-input-height);
   padding: 0 12px;
   background: var(--bg-surface);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid rgba(122, 108, 94, 0.22);
   border-radius: var(--radius-md);
   color: var(--text-main);
   font-size: 0.88rem;
@@ -725,12 +775,12 @@ input[type="number"] {
 }
 
 .input-field:hover:not(:disabled) {
-  border-color: rgba(148, 163, 184, 0.38);
+  border-color: rgba(122, 108, 94, 0.38);
 }
 
 .input-field:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+  box-shadow: 0 0 0 3px rgba(180, 83, 59, 0.16);
   background: var(--bg-surface-elevated);
 }
 
@@ -784,7 +834,7 @@ input[type="time"].input-field {
   height: var(--form-input-height);
   padding: 0 32px 0 12px;
   background-color: var(--bg-surface);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid rgba(122, 108, 94, 0.22);
   border-radius: var(--radius-md);
   color: var(--text-main);
   font-size: 0.88rem;
@@ -799,12 +849,12 @@ input[type="time"].input-field {
 }
 
 .select-field:hover {
-  border-color: rgba(148, 163, 184, 0.38);
+  border-color: rgba(122, 108, 94, 0.38);
 }
 
 .select-field:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+  box-shadow: 0 0 0 3px rgba(180, 83, 59, 0.16);
   background-color: var(--bg-surface-elevated);
 }
 
@@ -910,7 +960,7 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: rgba(244, 63, 94, 0.2);
+  background: rgba(140, 47, 34, 0.2);
   border-color: var(--neon-pink);
 }
 
@@ -980,9 +1030,9 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .badge-neutral {
-  background: rgba(148, 163, 184, 0.1);
+  background: rgba(122, 108, 94, 0.1);
   color: var(--text-secondary);
-  border-color: rgba(148, 163, 184, 0.2);
+  border-color: rgba(122, 108, 94, 0.2);
 }
 
 .urgent-indicator {
@@ -1017,11 +1067,11 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .metric-card.highlight-profit {
-  border-color: rgba(16, 185, 129, 0.35);
+  border-color: rgba(47, 93, 80, 0.35);
 }
 
 .metric-card.highlight-warning {
-  border-color: rgba(244, 63, 94, 0.35);
+  border-color: rgba(140, 47, 34, 0.35);
 }
 
 .metric-label {
@@ -1062,7 +1112,7 @@ input[type="checkbox"], input[type="radio"] {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(9, 13, 22, 0.75);
+  background: rgba(26, 20, 15, 0.74);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 100;
@@ -1286,7 +1336,7 @@ input[type="checkbox"], input[type="radio"] {
 
 .jf-table td {
   padding: 11px 14px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  border-bottom: 1px solid rgba(122, 108, 94, 0.1);
   vertical-align: middle;
   color: var(--text-secondary);
 }
@@ -1296,7 +1346,7 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .jf-table tbody tr:hover {
-  background: rgba(148, 163, 184, 0.05);
+  background: rgba(122, 108, 94, 0.05);
 }
 
 /* --------------------------------------------------------------------------
@@ -1390,7 +1440,7 @@ input[type="checkbox"], input[type="radio"] {
 
 .cal-cell.is-selected {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 0 2px rgba(180, 83, 59, 0.25);
   background: var(--bg-surface-elevated);
 }
 
@@ -1434,7 +1484,7 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .service-card:hover {
-  border-color: rgba(148, 163, 184, 0.35);
+  border-color: rgba(122, 108, 94, 0.35);
 }
 
 .service-card.inactive {
@@ -1477,7 +1527,7 @@ input[type="checkbox"], input[type="radio"] {
   max-width: 420px;
   min-width: 180px;
   background: var(--bg-surface);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid rgba(122, 108, 94, 0.22);
   border-radius: var(--radius-md);
   padding: 0 12px;
   color: var(--text-main);
@@ -1489,7 +1539,7 @@ input[type="checkbox"], input[type="radio"] {
 
 .service-title-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.16);
+  box-shadow: 0 0 0 2px rgba(180, 83, 59, 0.16);
 }
 
 .service-card-metrics {
@@ -1665,8 +1715,8 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .offer-compact-row.selected {
-  background: rgba(56, 189, 248, 0.06);
-  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(63, 107, 115, 0.06);
+  border-color: rgba(63, 107, 115, 0.35);
 }
 
 .offer-radio-label {
@@ -2072,4 +2122,122 @@ a:focus-visible {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* --------------------------------------------------------------------------
+   19. IDENTIDAD VISUAL — RITMO, SELLOS E ILUSTRACIÓN
+   -------------------------------------------------------------------------- */
+
+/* Las métricas entran escalonadas, como quien pasa las páginas de un libro */
+.metrics-strip .metric-card {
+  animation: jfCardIn 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.metrics-strip .metric-card:nth-child(1) { animation-delay: 0.02s; }
+.metrics-strip .metric-card:nth-child(2) { animation-delay: 0.08s; }
+.metrics-strip .metric-card:nth-child(3) { animation-delay: 0.14s; }
+.metrics-strip .metric-card:nth-child(4) { animation-delay: 0.20s; }
+
+@keyframes jfCardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* La cifra de ganancia brilla como tinta fresca */
+.metric-card.highlight-profit {
+  border-color: var(--success-border);
+  box-shadow: inset 3px 0 0 var(--success), var(--shadow-xs);
+}
+.metric-card.highlight-profit .metric-value {
+  text-shadow: 0 0 20px var(--neon-emerald-glow);
+}
+
+/* Ilustración de identidad: dos losas = venta / costo real / cobro */
+.jf-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 132px;
+  padding: 16px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--paper-gradient);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+  position: relative;
+  overflow: hidden;
+}
+.jf-hero::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -70px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--primary-glow) 0%, transparent 68%);
+  pointer-events: none;
+}
+.jf-hero-art {
+  width: 128px;
+  height: 112px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 8px 12px rgba(66, 50, 38, 0.16));
+}
+.jf-hero-copy {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+.jf-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.jf-hero-title {
+  font-family: var(--font-heading);
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  margin: 0 0 4px;
+}
+.jf-hero-text {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 580px;
+  line-height: 1.5;
+}
+.jf-hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+/* Variante compacta para el primer paso del cotizador */
+.jf-hero--compact {
+  min-height: 96px;
+  padding: 12px 20px;
+}
+.jf-hero--compact .jf-hero-art {
+  width: 88px;
+  height: 80px;
+}
+.jf-hero--compact .jf-hero-title {
+  font-size: 1rem;
+  margin-bottom: 2px;
+}
+
+@media (max-width: 720px) {
+  .jf-hero { gap: 12px; padding: 14px 16px; }
+  .jf-hero-art { width: 84px; height: 76px; }
+  .jf-hero-title { font-size: 1rem; }
+  .jf-hero--compact .jf-hero-art { width: 68px; height: 62px; }
 }

@@ -1074,7 +1074,7 @@ export default function DriveView({ selectedClientName = '', driveConfig, onOpen
                               : isWord
                               ? 'var(--primary-soft)'
                               : isImage
-                              ? 'rgba(168, 85, 247, 0.12)'
+                              ? 'var(--primary-soft)'
                               : 'var(--bg-inset)',
                             color: isPdf
                               ? 'var(--danger)'
@@ -1083,7 +1083,7 @@ export default function DriveView({ selectedClientName = '', driveConfig, onOpen
                               : isWord
                               ? 'var(--primary)'
                               : isImage
-                              ? '#7c3aed'
+                              ? 'var(--primary)'
                               : 'var(--text-muted)',
                             display: 'flex',
                             alignItems: 'center',

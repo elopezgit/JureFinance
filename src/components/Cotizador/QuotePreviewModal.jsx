@@ -41,11 +41,11 @@ import { formatFechaLarga } from '../../services/calendarioService';
 import { useModalA11y } from '../../hooks/useModalA11y';
 
 const ESTILO_POR_TIPO = {
-  aereo: { Icono: Plane, fondo: '#dbeafe', color: '#1d4ed8' },
-  hotel: { Icono: Hotel, fondo: '#fef3c7', color: '#b45309' },
-  traslados: { Icono: Car, fondo: '#e0e7ff', color: '#4338ca' },
-  asistencia: { Icono: ShieldCheck, fondo: '#d1fae5', color: '#065f46' },
-  extra: { Icono: Sparkles, fondo: '#fce7f3', color: '#9d174d' }
+  aereo: { Icono: Plane, fondo: '#f3e3dc', color: '#8c2f22' },
+  hotel: { Icono: Hotel, fondo: '#f4e9d4', color: '#8a5a16' },
+  traslados: { Icono: Car, fondo: '#e2ebe6', color: '#2f5d50' },
+  asistencia: { Icono: ShieldCheck, fondo: '#e6ebe4', color: '#3f6b73' },
+  extra: { Icono: Sparkles, fondo: '#efe3de', color: '#a85e2d' }
 };
 
 const formato = (moneda, valor) =>
@@ -139,13 +139,13 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
         </div>
 
         {/* Documento imprimible */}
-        <div className="modal-body printable-quote" style={{ padding: '36px 44px', background: '#ffffff' }}>
+        <div className="modal-body printable-quote" style={{ padding: '36px 44px', background: '#fffdf9' }}>
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'flex-start',
-              borderBottom: '2px solid #e5e7eb',
+              borderBottom: '2px solid #e4d9c8',
               paddingBottom: '24px',
               marginBottom: '28px'
             }}
@@ -157,7 +157,7 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
                     fontFamily: 'Outfit, sans-serif',
                     fontSize: '1.6rem',
                     fontWeight: 800,
-                    color: '#1e3a8a',
+                    color: '#b4533b',
                     letterSpacing: '-0.02em'
                   }}
                 >
@@ -167,27 +167,27 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
                   style={{
                     fontSize: '0.72rem',
                     fontWeight: 700,
-                    color: '#b45309',
+                    color: '#8a5a16',
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
                     padding: '2px 8px',
                     borderRadius: '4px',
-                    background: '#fef3c7'
+                    background: '#f4e9d4'
                   }}
                 >
                   Uso interno JureTravel
                 </span>
               </div>
-              <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: 0 }}>
+              <p style={{ fontSize: '0.82rem', color: '#8a7e72', margin: 0 }}>
                 Costos separados por Proveedor (Aero / Azabache), Calendario de Pagos y Precio Final al Cliente
               </p>
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#2a2622' }}>
                 Ref: {quote.id || 'COT-NUEVA'}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+              <div style={{ fontSize: '0.8rem', color: '#8a7e72' }}>
                 Fecha: <strong>{fechaCotizacion || new Date().toISOString().split('T')[0]}</strong>
               </div>
             </div>
@@ -196,8 +196,8 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
           {/* Cliente y viaje */}
           <div
             style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
+              background: '#f5eee3',
+              border: '1px solid #e4d9c8',
               borderRadius: '12px',
               padding: '20px 24px',
               marginBottom: '24px',
@@ -207,44 +207,44 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
             }}
           >
             <div>
-              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: '#8a7e72', letterSpacing: '0.05em' }}>
                 Cliente
               </div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginTop: '3px' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#2a2622', marginTop: '3px' }}>
                 {cliente || 'Nombre del Cliente'}
               </div>
             </div>
 
             <div>
-              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: '#8a7e72', letterSpacing: '0.05em' }}>
                 Destino
               </div>
-              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <MapPin size={16} color="#3b82f6" />
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#2a2622', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <MapPin size={16} color="#b4533b" />
                 {destino || 'Destino a convenir'}
               </div>
             </div>
 
             <div>
-              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: '#8a7e72', letterSpacing: '0.05em' }}>
                 Fechas
               </div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Calendar size={16} color="#3b82f6" />
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#2a2622', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Calendar size={16} color="#b4533b" />
                 {fechaViajeInicio || '—'} al {fechaViajeFin || '—'}
               </div>
             </div>
 
             <div>
-              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: '#8a7e72', letterSpacing: '0.05em' }}>
                 Pasajeros
               </div>
-              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Users size={16} color="#3b82f6" />
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#2a2622', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Users size={16} color="#b4533b" />
                 {paxCount}
               </div>
               {Array.isArray(pasajeros) && pasajeros.length > 0 && (
-                <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '3px' }}>
+                <div style={{ fontSize: '0.74rem', color: '#8a7e72', marginTop: '3px' }}>
                   {pasajeros.join(', ')}
                 </div>
               )}
@@ -260,17 +260,17 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
                   style={{
                     padding: '12px 16px',
                     borderRadius: '10px',
-                    background: '#f1f5f9',
-                    border: '1px solid #cbd5e1'
+                    background: '#f5eee3',
+                    border: '1px solid #e0d3bf'
                   }}
                 >
-                  <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: '#1e3a8a' }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: '#b4533b' }}>
                     Proveedor: {p.proveedor}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '4px' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#574e45', marginTop: '4px' }}>
                     Cotizado en {p.proveedor}: <strong>{formato(moneda, p.totalCotizadoReferencia)}</strong>
                   </div>
-                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 800 }}>
+                  <div style={{ fontSize: '0.88rem', color: '#2a2622', marginTop: '2px', fontWeight: 800 }}>
                     A pagar realmente: {formato(moneda, p.totalAPagarCompra)}
                   </div>
                 </div>
@@ -284,8 +284,8 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
               style={{
                 fontSize: '1rem',
                 fontWeight: 700,
-                color: '#0f172a',
-                borderBottom: '1px solid #e2e8f0',
+                color: '#2a2622',
+                borderBottom: '1px solid #e4d9c8',
                 paddingBottom: '8px',
                 marginBottom: '14px'
               }}
@@ -294,7 +294,7 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
             </h4>
 
             {items.length === 0 && (
-              <p style={{ fontSize: '0.88rem', color: '#64748b', margin: 0 }}>
+              <p style={{ fontSize: '0.88rem', color: '#8a7e72', margin: 0 }}>
                 No hay servicios activos en esta cotización.
               </p>
             )}
@@ -319,8 +319,8 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
                       gap: '14px',
                       padding: '12px 16px',
                       borderRadius: '8px',
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0'
+                      background: '#fffdf9',
+                      border: '1px solid #e4d9c8'
                     }}
                   >
                     <div
@@ -340,16 +340,16 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.92rem' }}>
+                      <div style={{ fontWeight: 700, color: '#2a2622', fontSize: '0.92rem' }}>
                         {item.nombre || SECCION_LABEL[item.tipo] || 'Servicio'}
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                      <div style={{ fontSize: '0.76rem', color: '#8a7e72' }}>
                         {SECCION_LABEL[item.tipo] || item.tipo} · Se compra a{' '}
                         <strong>{compra?.proveedor || 'sin proveedor'}</strong> ·{' '}
                         {obtenerVencimientoTexto(item)}
                       </div>
                       {(item.ofertas || []).length > 1 && (
-                        <div style={{ fontSize: '0.72rem', color: '#475569', marginTop: '2px' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#574e45', marginTop: '2px' }}>
                           Valores por proveedor:{' '}
                           {(item.ofertas || [])
                             .map(
@@ -364,29 +364,29 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
                     </div>
 
                     <div style={{ textAlign: 'right', minWidth: '92px' }}>
-                      <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase' }}>Base PDF</div>
-                      <div style={{ fontWeight: 700, fontFamily: 'monospace', color: '#b45309' }}>
+                      <div style={{ fontSize: '0.68rem', color: '#8a7e72', textTransform: 'uppercase' }}>Base PDF</div>
+                      <div style={{ fontWeight: 700, fontFamily: 'monospace', color: '#8a5a16' }}>
                         {formato(moneda, costoBase)}
                       </div>
                     </div>
 
                     <div style={{ textAlign: 'right', minWidth: '92px' }}>
-                      <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase' }}>Costo real</div>
+                      <div style={{ fontSize: '0.68rem', color: '#8a7e72', textTransform: 'uppercase' }}>Costo real</div>
                       <div style={{ fontWeight: 700, fontFamily: 'monospace' }}>{formato(moneda, costo)}</div>
                     </div>
 
                     <div style={{ textAlign: 'right', minWidth: '92px' }}>
-                      <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase' }}>Cliente</div>
+                      <div style={{ fontSize: '0.68rem', color: '#8a7e72', textTransform: 'uppercase' }}>Cliente</div>
                       <div style={{ fontWeight: 700, fontFamily: 'monospace' }}>{formato(moneda, venta)}</div>
                     </div>
 
                     <div style={{ textAlign: 'right', minWidth: '92px' }}>
-                      <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase' }}>Ganancia</div>
+                      <div style={{ fontSize: '0.68rem', color: '#8a7e72', textTransform: 'uppercase' }}>Ganancia</div>
                       <div
                         style={{
                           fontWeight: 800,
                           fontFamily: 'monospace',
-                          color: utilidad >= 0 ? '#047857' : '#b91c1c'
+                          color: utilidad >= 0 ? '#2f5d50' : '#8c2f22'
                         }}
                       >
                         {formato(moneda, utilidad)}
@@ -401,22 +401,22 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
           {/* Totales */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
-              color: '#ffffff',
+              background: 'var(--accent-gradient)',
+              color: '#fffdf9',
               borderRadius: '16px',
               padding: '22px 26px',
               marginBottom: '22px',
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
               gap: '18px',
-              boxShadow: '0 10px 25px -5px rgba(30, 58, 138, 0.4)'
+              boxShadow: '0 10px 25px -5px rgba(140, 47, 34, 0.28)'
             }}
           >
             <div>
               <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.85, fontWeight: 700 }}>
                 Base PDF (Azabache)
               </div>
-              <div style={{ fontSize: '1.3rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: '#fde68a' }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: '#f0d9a8' }}>
                 {formato(moneda, totalCostoBase)}
               </div>
               <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
@@ -452,7 +452,7 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
               <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.85, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <TrendingUp size={13} /> Ganancia real
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: ganancia >= 0 ? '#6ee7b7' : '#fca5a5' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', color: ganancia >= 0 ? '#bfe0cf' : '#f0b6a7' }}>
                 {formato(moneda, ganancia)}
               </div>
               <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
@@ -462,17 +462,17 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
           </div>
 
           {notas && (
-            <div style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: '8px', borderLeft: '4px solid #3b82f6', marginBottom: '20px' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '4px' }}>
+            <div style={{ background: '#f5eee3', padding: '14px 18px', borderRadius: '8px', borderLeft: '4px solid #b4533b', marginBottom: '20px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#574e45', marginBottom: '4px' }}>
                 Notas internas
               </div>
-              <p style={{ fontSize: '0.82rem', color: '#334155', margin: 0, whiteSpace: 'pre-line' }}>
+              <p style={{ fontSize: '0.82rem', color: '#574e45', margin: 0, whiteSpace: 'pre-line' }}>
                 {notas}
               </p>
             </div>
           )}
 
-          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '14px', fontSize: '0.72rem', color: '#64748b' }}>
+          <div style={{ borderTop: '1px solid #e4d9c8', paddingTop: '14px', fontSize: '0.72rem', color: '#8a7e72' }}>
             <p style={{ margin: 0 }}>
               Documento de uso interno. El presupuesto que recibe el cliente se genera con el
               constructor de PDF del proveedor (Azabache). Los importes son totales del viaje, expresados en{' '}

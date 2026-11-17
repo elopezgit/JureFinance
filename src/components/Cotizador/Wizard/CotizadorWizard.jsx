@@ -25,6 +25,7 @@ import {
   formatoMoneda
 } from './wizardUtils';
 import './wizard.css';
+import heroLayers from '../../../assets/hero.svg';
 import { derivarPagosDesdeCotizaciones } from '../../../services/calendarioService';
 
 export default function CotizadorWizard({
@@ -292,6 +293,18 @@ export default function CotizadorWizard({
   /* ------------------------------- Render ------------------------------------ */
   return (
     <div className="wizard-form-wrap">
+      {pasoActual?.tipo === 'datos' && (
+        <section className="jf-hero jf-hero--compact" aria-label="Cómo funciona el cotizador">
+          <img className="jf-hero-art" src={heroLayers} alt="" />
+          <div className="jf-hero-copy">
+            <span className="jf-hero-eyebrow">Paso 1 de 3 · Datos del viaje</span>
+            <h2 className="jf-hero-title">Primero, los números reales</h2>
+            <p className="jf-hero-text">
+              Cargá lo que se le vende al cliente y lo que cuesta con cada proveedor. El margen se calcula solo.
+            </p>
+          </div>
+        </section>
+      )}
 
       <WizardNav
         steps={pasos}

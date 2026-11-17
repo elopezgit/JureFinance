@@ -81,7 +81,7 @@ export default function DriveConfigModal({ onClose }) {
               width: '42px',
               height: '42px',
               borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              background: 'var(--emerald-gradient)',
               color: 'white',
               display: 'flex',
               alignItems: 'center',

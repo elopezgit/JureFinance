@@ -41,7 +41,15 @@ import { normalizarServicios } from '../../services/serviciosService';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import { buildBloquesMes } from '../../data/initialData';
 
-const PALETA = ['#3b82f6', '#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ec4899', '#ef4444'];
+const PALETA = [
+  'var(--prov-1)',
+  'var(--prov-2)',
+  'var(--prov-3)',
+  'var(--prov-4)',
+  'var(--prov-5)',
+  'var(--prov-6)',
+  'var(--prov-7)'
+];
 
 /** 'aero' → 'Aero' */
 function nombreProveedor(id) {
@@ -599,7 +607,7 @@ export default function ConfiguracionMensualView({
                       width: '7px',
                       height: '7px',
                       borderRadius: '50%',
-                      background: activo ? '#fff' : 'var(--success)',
+                      background: activo ? 'var(--text-inverse)' : 'var(--success)',
                       display: 'inline-block',
                       marginLeft: '2px'
                     }}
@@ -892,8 +900,8 @@ export default function ConfiguracionMensualView({
                       justifyContent: 'center',
                       fontSize: '0.7rem',
                       fontWeight: 700,
-                      color: color ? '#fff' : 'var(--danger)',
-                      background: color || 'rgba(239, 68, 68, 0.12)',
+                      color: color ? '#fffdf9' : 'var(--danger)',
+                      background: color || 'var(--danger-bg)',
                       border: color ? 'none' : '1px dashed var(--danger)'
                     }}
                   >

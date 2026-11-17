@@ -1,4 +1,4 @@
-/* Wizard Styles - Clean Slate Fintech Theme */
+/* Wizard Styles — Libro de contabilidad: papel, tinta y sello */
 .wizard-nav {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -37,12 +37,12 @@
 }
 
 .wizard-step:not(:disabled):hover {
-  background: rgba(148, 163, 184, 0.08);
+  background: rgba(122, 108, 94, 0.08);
 }
 
 .wizard-step.active {
-  background: rgba(59, 130, 246, 0.12);
-  border-color: rgba(59, 130, 246, 0.35);
+  background: rgba(180, 83, 59, 0.12);
+  border-color: rgba(180, 83, 59, 0.35);
 }
 
 .wizard-step.completed:not(.active) {
@@ -68,13 +68,13 @@
 .wizard-step.active .wizard-step-circle {
   background: var(--primary);
   border-color: var(--primary);
-  color: #ffffff;
+  color: var(--text-inverse);
   font-weight: 700;
 }
 
 .wizard-step.completed .wizard-step-circle {
-  background: rgba(16, 185, 129, 0.16);
-  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(47, 93, 80, 0.16);
+  border-color: rgba(47, 93, 80, 0.45);
   color: var(--success);
 }
 
@@ -141,7 +141,7 @@
   gap: 12px;
   align-items: center;
   padding: 12px 16px;
-  background: #0d131f;
+  background: var(--bg-inset);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   margin-bottom: 10px;

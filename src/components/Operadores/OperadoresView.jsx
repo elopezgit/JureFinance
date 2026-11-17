@@ -132,7 +132,7 @@ export default function OperadoresView({
                         width: '42px',
                         height: '42px',
                         borderRadius: 'var(--radius-md)',
-                        background: 'rgba(59, 130, 246, 0.15)',
+                        background: 'var(--primary-soft)',
                         color: 'var(--primary-light)',
                         display: 'flex',
                         alignItems: 'center',
