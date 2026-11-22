@@ -15,6 +15,9 @@ dist-ssr
 .tmp-cobros/
 .tmp-debug/
 .tmp-vista-cobros/
+.tmp-runtime-profile/
+.tmp-ficha-profile/
+.tmp-sabanas-profile/
 *.local
 
 # Editor directories and files

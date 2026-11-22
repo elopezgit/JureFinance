@@ -1,0 +1,146 @@
+/* sabanas.css - Cotizador por sabanas de proveedores:
+   1) cargar sabanas, 2) armar el set, 3) precio al cliente, 4) guardar. */
+
+.jf-sab-wizard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.jf-sab-pasos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.jf-sab-paso-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.jf-sab-paso-btn.activo {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--bg-surface);
+}
+
+.jf-sab-paso-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.jf-sab-card {
+  padding: 20px 22px;
+}
+
+.jf-sab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.jf-sab-linea {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.jf-sab-linea-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.jf-sab-linea-titulo {
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--text-main);
+}
+
+.jf-sab-opcion {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.jf-sab-opcion:hover {
+  border-color: var(--primary);
+}
+
+.jf-sab-opcion.elegida {
+  border-color: var(--success);
+  background: var(--success-bg);
+}
+
+.jf-sab-opcion-precio {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.jf-sab-avisos {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+
+.jf-sab-resumen {
+  position: sticky;
+  bottom: 0;
+  border: 1px solid var(--primary-border);
+  background: var(--primary-soft);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  z-index: 2;
+}
+
+.jf-sab-set-linea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px dashed var(--border);
+  padding: 8px 0;
+  flex-wrap: wrap;
+}
+
+.jf-sab-set-linea:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 760px) {
+  .jf-sab-card {
+    padding: 14px;
+  }
+}

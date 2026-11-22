@@ -230,6 +230,9 @@ export default function CotizadorWizard({
     fechaViajeInicio,
     fechaViajeFin,
     fechaCotizacion,
+    // Agenda de cobros: las cotizaciones nuevas arrancan con "hoy" y las viejas
+    // conservan la fecha que se haya cargado desde la Ficha del Viaje.
+    fechaCobro: initialQuote?.fechaCobro || initialQuote?.fechaCotizacion || fechaCotizacion,
     pax: paxCount,
     pasajeros: pasajeros.map((p) => String(p || '').trim()).filter(Boolean),
     pasajerosDetalle,

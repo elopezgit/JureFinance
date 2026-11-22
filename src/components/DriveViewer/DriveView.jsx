@@ -39,7 +39,13 @@ import {
 } from '../../services/driveService';
 import { APPS_SCRIPT_V3_SOURCE } from '../../services/appsScriptSource';
 
-export default function DriveView({ selectedClientName = '', driveConfig, onOpenConfig }) {
+export default function DriveView({
+  selectedClientName = '',
+  driveConfig,
+  onOpenConfig,
+  cotizaciones = [],
+  onAbrirFicha
+}) {
   // Client selection & search: nunca un nombre de ejemplo quemado en el código.
   const [currentClient, setCurrentClient] = useState(
     () => selectedClientName || getAllClientFiles()[0] || ''
@@ -117,6 +123,12 @@ export default function DriveView({ selectedClientName = '', driveConfig, onOpen
   };
 
   const isAtClientRoot = folderPath.length <= 1;
+
+  // Viaje del cliente seleccionado, para saltar a su ficha sin volver al Historial.
+  const quoteDelCliente = useMemo(
+    () => (cotizaciones || []).find((q) => q.cliente === currentClient) || null,
+    [cotizaciones, currentClient]
+  );
 
   // Estado real del conector de Google Drive (para no fingir conexión en vivo)
   const connectorStatus = useMemo(() => {
@@ -471,6 +483,16 @@ export default function DriveView({ selectedClientName = '', driveConfig, onOpen
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => quoteDelCliente && onAbrirFicha?.(quoteDelCliente.id, 'documentos')}
+              disabled={!quoteDelCliente}
+              title={quoteDelCliente
+                ? `Ver la ficha del viaje de ${quoteDelCliente.cliente}`
+                : 'Este cliente todavía no tiene un viaje registrado en JureFinance'}
+            >
+              <FileText size={14} /> Ver ficha del viaje
+            </button>
             {onOpenConfig && (
               <button
                 className="btn btn-secondary btn-sm"

@@ -1,6 +1,8 @@
-// CotizadorView.jsx - Interactive Quotation Engine for Travel Agency (Wizard)
+// CotizadorView.jsx - Punto de entrada del cotizador.
+// El flujo por sabanas reemplaza al wizard por servicios: se carga la sabana de
+// cada proveedor, se arma el set a mano y se define el precio al cliente.
 import React from 'react';
-import CotizadorWizard from './Wizard/CotizadorWizard';
+import CotizadorSabanas from './Sabanas/CotizadorSabanas';
 
 export default function CotizadorView({
   initialQuote,
@@ -9,7 +11,7 @@ export default function CotizadorView({
   configMensual = []
 }) {
   return (
-    <CotizadorWizard
+    <CotizadorSabanas
       initialQuote={initialQuote}
       onSaveQuote={onSaveQuote}
       operadoresList={operadoresList}

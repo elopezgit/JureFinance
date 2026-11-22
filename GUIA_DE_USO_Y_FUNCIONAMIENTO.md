@@ -30,25 +30,28 @@ En el trabajo diario de **JureTravel**, un viaje combina precios y reglas de pag
 2. En Azabache verás que el mismo vuelo tiene un costo más alto que en Aero (por ejemplo, **USD 2.200**), además del costo del hotel (ej. **USD 1.500**) y del traslado (ej. **USD 100**).
 3. Dentro del **armador de PDF de Azabache**, podés aplicarle un **porcentaje (%) adicional** para obtener el **precio final que le enviás al cliente** en el PDF.
 
-### Paso 3: Registrar los valores por separado en el Cotizador de JureFinance
-Abriendo **Cotizador de Viajes** en el menú izquierdo de JureFinance, completás los 3 pasos del asistente:
+### Paso 3: Registrar las sabanas en el Cotizador de JureFinance
+Abriendo **Cotizador de Viajes** en el menú izquierdo, completás los 4 pasos. Todo se carga en **dólares** y los montos son **totales del servicio** (no por pasajero).
 
-1. **Datos del Viaje:**
-   - Cargás el nombre del cliente, destino, fechas del viaje, cantidad y nombres de pasajeros, y moneda (`USD`, `ARS`, `EUR` o `BRL`).
-2. **Servicios, Costos por Proveedor y Precio al Cliente:**
-   - Podés usar el botón rápido **"+ Armar Paquete (Vuelo Aero/Azabache + Hotel + Traslado)"** o agregar cada servicio individualmente.
-   - **En el Vuelo:**
-     - En la fila de **Aero**, cargás el costo real de Aero (ej. USD 1.900) y lo dejás marcado con **"Se compra y paga"**.
-     - En la fila de **Azabache**, cargás el costo del vuelo en Azabache (ej. USD 2.200) y lo marcás como **"★ Base PDF Cliente"**.
-     - El sistema calcula y guarda automáticamente la diferencia que JureTravel ahorra por emitir el vuelo en Aero en lugar de Azabache.
-     - Cuando el vuelo se emite, cambiás el estado a **Emitido (= Confirmado JureTravel)** e indicás la **Fecha de Emisión Confirmada**. El sistema busca esa fecha en los **umbrales bimestrales de Aero** y calcula automáticamente qué día vence el pago.
-   - **En el Hotel, Traslado y demás servicios:**
-     - Seleccionás **Azabache** (o el proveedor correspondiente), cargás el costo neto de cada servicio y verificás que figure como **Reservado** con su **Fecha de Reserva** (o fecha de vencimiento del voucher).
-   - **Precio Final al Cliente (% del Constructor PDF):**
-     - En la barra superior del **Constructor de Presupuesto (Azabache → Cliente)** podés ingresar el **% de aumento** (ej. 20%) y pulsar **"Calcular Precio al Cliente"**, o escribir directamente el precio final enviado en el PDF.
-   - Al pie de la pantalla verás en vivo la tabla **"Vista Previa de Pagos a Proveedores y Números Guardados por Separado"** con lo cotizado en cada proveedor, lo que realmente se paga a cada uno y cuándo vence cada pago.
-3. **Resumen y Guardado:**
-   - Revisás el desglose completo por proveedor, la ganancia neta real de JureTravel y hacés clic en **"Guardar Cotización"**.
+1. **Sabanas por proveedor:**
+   - Cargás cliente, destino, fechas, pasajeros y notas.
+   - Tocás un proveedor (por ejemplo **Aero**) y cargás sus precios. **Aero solo permite Vuelo**; los demás permiten Vuelo, Hotel, Traslado, Asistencia y Excursiones.
+   - En cada precio podés indicar la descripción, la vigencia de la cotización, si es reembolsable, si incluye impuestos y (opcional) la fecha de vencimiento de pago.
+   - Repetís con **Azabache**, **Price** o cualquier otro proveedor. Cada uno tiene su propia sabana.
+
+2. **Armar mi set:**
+   - Aparecen todos los precios juntos, agrupados por servicio. El más bajo queda marcado como pista y los avisos (cotización vencida, no reembolsable, sin impuestos) aparecen al lado.
+   - **Nada se elige automáticamente**: tocás línea por línea de qué proveedor comprás. Podés tomar el vuelo de Aero, el hotel de Price y los traslados de Azabache.
+   - Podés escribir una nota por línea (por ejemplo *"Elegí Aero aunque no reembolsable, por US$ 300 menos"*).
+   - Abajo ves en vivo el **costo de tu set** y el ahorro contra la opción más cara.
+
+3. **Precio al cliente:**
+   - Elegís **número fijo** o **porcentaje**. Con porcentaje se calcula `costo × (1 + % / 100)` y se recalcula en vivo al moverlo.
+   - Vés juntos el costo, la venta, la ganancia y el margen.
+
+4. **Resumen y guardado:**
+   - Revisás el set armado y hacés clic en **"Guardar Cotización"**. Podés imprimir el resumen interno desde el botón **"Resumen imprimible"**.
+   - En la **Ficha del Viaje** podés ver la pestaña **Comparación** con las sabanas cargadas y lo que elegiste en cada servicio.
 
 ---
 
@@ -107,3 +110,21 @@ Al entrar en **Calendario de Pagos** en el menú izquierdo, tenés a la vista tu
 - **Calendario de Cobros (Ingresos de Clientes):** para registrar las señas, cuotas y pagos de los pasajeros y controlar cuánto falta cobrar de cada viaje.
 - **Expedientes & Drive:** acceso directo por cliente a las carpetas con los vouchers emitidos, pasajes y fotos de DNI/pasaportes.
 - **Métricas & Ganancias:** tablero de rentabilidad donde comparás el total cobrado a clientes contra el costo real pagado a Aero y Azabache, viendo tu ganancia neta real.
+
+---
+
+## 6. La Ficha del Viaje: todo un viaje en una sola pantalla
+
+Cuando querés ver **todo lo de un viaje junto**, entrá al **Historial de Cotizaciones** y pulsá el botón **"Ver ficha"** (es el botón principal de cada fila). También podés llegar desde el nombre del cliente en el Calendario de Cobros, en el Calendario de Pagos, desde los próximos vencimientos del tablero o desde Expedientes & Drive.
+
+La ficha tiene una franja arriba con los cuatro números que importan —**Venta al cliente, Costo real, Ganancia real y Estado de cobro**— y cinco pestañas:
+
+| Pestaña | Qué respondés acá |
+|---|---|
+| **Datos** | Cliente, pasajeros, itinerario y la diferencia entre lo que se cotizó en Azabache y lo que se compró en Aero. |
+| **Cobros** | Cuánto te deben, cuándo vence la próxima fecha de cobro (la podés cambiar) y el botón **Cobrar** ya precargado con el saldo. |
+| **Pagos a proveedores** | A quién le debés y en qué fecha, agrupado por bloque, con el botón **Registrar pago del bloque**. |
+| **Documentos** | Los vouchers, pasajes y fotos de DNI del cliente en Google Drive, con acceso directo y opción de subir archivos. |
+| **Resumen interno** | El documento imprimible con los números reales del viaje (no es el presupuesto del cliente). |
+
+Al cerrar la ficha volvés exactamente al módulo desde donde la abriste.

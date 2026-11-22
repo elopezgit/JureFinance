@@ -1,0 +1,228 @@
+/* ficha.css - Estilos de la Ficha del Viaje: una sola pantalla con los datos,
+   los cobros, los pagos a proveedores y los documentos de Drive de un viaje. */
+
+/* Se apoya en .modal-backdrop para heredar el comportamiento de cierre con
+   Escape del controlador global, pero ocupa toda la ventana. */
+.jf-ficha-backdrop {
+  padding: 0;
+  align-items: stretch;
+  justify-content: stretch;
+  z-index: 80;
+}
+
+.jf-ficha {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  max-height: 100vh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow-y: auto;
+  background: var(--bg-page, var(--bg-surface));
+  animation: none;
+}
+
+.jf-ficha-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 28px;
+}
+
+.jf-ficha-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.jf-ficha-titulo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 2px 0 4px;
+  line-height: 1.2;
+}
+
+.jf-ficha-sub {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.jf-ficha-acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.jf-ficha-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.jf-ficha-body {
+  padding: 22px 28px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.jf-ficha-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.jf-ficha-strip .metric-card {
+  margin: 0;
+}
+
+.jf-ficha-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.jf-ficha-seccion-titulo {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jf-ficha-nota {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.jf-ficha-progreso {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin: 8px 0 4px;
+}
+
+.jf-ficha-progreso > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--success);
+  transition: width 0.25s ease;
+}
+
+.jf-ficha-doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.jf-ficha-doc {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.jf-ficha-doc-nombre {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 170px;
+}
+
+.jf-ficha-doc-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Enlaces que llevan a la ficha desde otros módulos */
+.jf-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--primary-light, var(--primary));
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.jf-link:hover {
+  color: var(--primary);
+}
+
+/* Menú de acciones secundarias del Historial */
+.jf-acciones-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 10;
+  min-width: 180px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jf-acciones-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-main);
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.jf-acciones-menu button:hover {
+  background: var(--primary-soft);
+}
+
+.jf-acciones-menu button.jf-accion-peligrosa {
+  color: var(--danger);
+}
+
+@media (max-width: 760px) {
+  .jf-ficha-header,
+  .jf-ficha-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .jf-ficha-titulo {
+    font-size: 1.2rem;
+  }
+}

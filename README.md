@@ -25,6 +25,8 @@ npm run test:ui           # render SSR del cotizador
 npm run test:runtime      # pruebas de runtime
 npm run test:cobros       # imputación multi-moneda y análisis del modal de cobros
 npm run test:vista-cobros # render SSR de la vista de cobros
+npm run test:ficha        # smoke test de la Ficha del Viaje (Chrome headless)
+npm run test:sabanas      # smoke test del cotizador por sabanas (Chrome headless)
 ```
 
 > Si `oxlint` o Vite fallan con `memory allocation ... failed`, ejecutalos con
@@ -35,12 +37,13 @@ npm run test:vista-cobros # render SSR de la vista de cobros
 
 | Módulo | Componente | Qué hace |
 |---|---|---|
-| Cotizador | `src/components/Cotizador/CotizadorView.jsx` | Wizard por pasos: datos y proveedores → servicios (venta y costo real) → resumen. |
+| Cotizador por sabanas | `src/components/Cotizador/Sabanas/CotizadorSabanas.jsx` | 4 pasos: sabana por TTOO (Aero solo vuelo) → armar el set a mano con precios y avisos → precio al cliente (fijo o %) → guardar. |
 | Operadores | `src/components/Operadores/` | Alta/edición de proveedores (Aero, Price, Azabache…). |
 | Configuración mensual | `src/components/Configuracion/ConfiguracionMensualView.jsx` | Bloques "día de emisión → fecha de pago" por proveedor y mes. |
 | Cuentas a pagar | `src/components/Cobranzas/CalendarioPagosView.jsx` | Calendario de vencimientos + **liquidación por proveedor** y registro de pagos. |
 | Cuentas a cobrar | `src/components/Cobranzas/CalendarioCobrosView.jsx` | Cobros a clientes derivados del precio de venta, agrupados por mes. |
-| Historial | `src/components/Historial/HistorialView.jsx` | Cotizaciones guardadas. |
+| Historial | `src/components/Historial/HistorialView.jsx` | Cotizaciones guardadas; botón **Ver ficha** como acción principal. |
+| Ficha del Viaje | `src/components/FichaViaje/FichaViaje.jsx` | Una sola pantalla del viaje: datos, cuánto se cobra y cuándo, pagos a proveedores y documentos en Drive. Se abre desde Historial, Cobros, Pagos, Dashboard y Drive. |
 | Dashboard | `src/components/Dashboard/DashboardView.jsx` | Métricas de ganancias y cobros. |
 | Drive | `src/components/DriveViewer/` | Expedientes por cliente sincronizados con Google Drive. |
 
@@ -57,7 +60,9 @@ src/
     driveService.js        # puente con Google Drive (Apps Script)
   config/storage.js        # claves de localStorage compartidas (una sola fuente)
   hooks/useModalA11y.js    # Escape, foco y aria-modal para los diálogos
-  components/Common/       # ConfirmDialog reutilizable
+  components/Cotizador/Sabanas/ # cotizador por sabanas de proveedores
+  components/FichaViaje/   # vista 360° del viaje: datos, cobros, pagos y documentos
+  components/Common/       # ConfirmDialog y modal de pago de bloque reutilizables
   data/initialData.js      # proveedores y datos de ejemplo
 scripts/probarModelo.mjs   # pruebas del modelo y de la agenda (npm run test:modelo)
 google-apps-script/        # Web App (conector v3.1) que habla con Drive

@@ -7,7 +7,9 @@ import {
   Copy,  Users,
   MapPin,
   Calendar,
-  FolderOpen
+  FolderOpen,
+  MoreHorizontal,
+  FileText
 } from 'lucide-react';
 import { normalizarServicios, totalNetoItems, SECCION_LABEL } from '../../services/serviciosService';
 
@@ -16,10 +18,12 @@ export default function HistorialView({
   onEditQuote,
   onDeleteQuote,
   onDuplicateQuote,
-  onOpenClientDrive
+  onOpenClientDrive,
+  onAbrirFicha
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('TODOS');
+  const [menuAbierto, setMenuAbierto] = useState(null);
 
   // Filter quotes
   const filteredQuotes = cotizaciones.filter((q) => {
@@ -215,39 +219,41 @@ export default function HistorialView({
                   </div>
                 </div>
 
-                {/* Actions (2 cols) */}
-                <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                {/* Actions (2 cols): la ficha es la acción principal; el resto va al menú */}
+                <div style={{ gridColumn: 'span 2', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
                   <button
-                    className="btn btn-secondary btn-icon-only"
-                    onClick={() => onOpenClientDrive(q.cliente)}
-                    title={`Abrir carpeta de Google Drive para ${q.cliente}`}
+                    className="btn btn-primary btn-sm"
+                    onClick={() => onAbrirFicha?.(q.id, 'datos')}
+                    title={`Ver la ficha del viaje de ${q.cliente}`}
                   >
-                    <FolderOpen size={16} color="var(--primary-light)" />
+                    <FileText size={14} /> Ver ficha
                   </button>
 
                   <button
                     className="btn btn-secondary btn-icon-only"
-                    onClick={() => onDuplicateQuote(q)}
-                    title="Duplicar cotización"
+                    onClick={() => setMenuAbierto(menuAbierto === q.id ? null : q.id)}
+                    title="Más acciones"
+                    aria-label="Más acciones"
                   >
-                    <Copy size={16} />
+                    <MoreHorizontal size={16} />
                   </button>
 
-                  <button
-                    className="btn btn-primary btn-icon-only"
-                    onClick={() => onEditQuote(q)}
-                    title="Editar cotización en el calculador"
-                  >
-                    <Edit size={16} />
-                  </button>
-
-                  <button
-                    className="btn btn-danger btn-icon-only"
-                    onClick={() => onDeleteQuote(q.id)}
-                    title="Eliminar cotización"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {menuAbierto === q.id && (
+                    <div className="jf-acciones-menu">
+                      <button onClick={() => { setMenuAbierto(null); onEditQuote(q); }}>
+                        <Edit size={14} /> Editar cotización
+                      </button>
+                      <button onClick={() => { setMenuAbierto(null); onDuplicateQuote(q); }}>
+                        <Copy size={14} /> Duplicar cotización
+                      </button>
+                      <button onClick={() => { setMenuAbierto(null); onOpenClientDrive(q.cliente); }}>
+                        <FolderOpen size={14} /> Ver en Drive
+                      </button>
+                      <button className="jf-accion-peligrosa" onClick={() => { setMenuAbierto(null); onDeleteQuote(q.id); }}>
+                        <Trash2 size={14} /> Eliminar cotización
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );

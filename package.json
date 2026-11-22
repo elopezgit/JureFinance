@@ -10,6 +10,8 @@
     "test:modelo": "vite build --ssr scripts/probarModelo.mjs --outDir .tmp-test --logLevel error && node .tmp-test/probarModelo.js",
     "test:ui": "vite build --ssr scripts/probarUI.mjs --outDir .tmp-ui --logLevel error && node .tmp-ui/probarUI.js",
     "test:runtime": "node scripts/probarRuntime.mjs",
+    "test:ficha": "node scripts/probarFicha.mjs",
+    "test:sabanas": "node scripts/probarSabanas.mjs",
     "test:cobros": "vite build --ssr scripts/probarCobros.mjs --outDir .tmp-cobros --logLevel error && node .tmp-cobros/probarCobros.js",
     "test:vista-cobros": "vite build --ssr scripts/probarVistaCobros.mjs --outDir .tmp-vista-cobros --logLevel error && node .tmp-vista-cobros/probarVistaCobros.js",
     "preview": "vite preview"

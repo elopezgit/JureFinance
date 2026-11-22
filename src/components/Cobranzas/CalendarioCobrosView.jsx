@@ -88,7 +88,8 @@ export default function CalendarioCobrosView({
   pagosClientes = [],
   onRegistrarCobroCliente,
   onRegistrarCobrosClientesLote,
-  onEliminarCobroCliente
+  onEliminarCobroCliente,
+  onAbrirFicha
 }) {
   const cobros = useMemo(() => derivarCobrosDesdeCotizaciones(cotizaciones), [cotizaciones]);
   const cobrosImputados = useMemo(() => imputarPagosPorViaje(cobros, pagosClientes), [cobros, pagosClientes]);
@@ -370,7 +371,9 @@ export default function CalendarioCobrosView({
                       {cobrosDelDia.map((c) => (
                         <div key={c.clave} className="row-soft">
                           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                            <strong>{c.cliente}</strong>
+                            <button className="jf-link" onClick={() => onAbrirFicha?.(c.cotizacionId, 'cobros')} title="Ver ficha del viaje">
+                              {c.cliente}
+                            </button>
                             <strong className="mono">{formatearMonto(c.saldo, c.moneda)}</strong>
                           </div>
                           <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{c.concepto}</div>
@@ -428,7 +431,9 @@ export default function CalendarioCobrosView({
                         return (
                           <tr key={c.clave}>
                             <td>
-                              <strong>{c.cliente}</strong>
+                              <button className="jf-link" onClick={() => onAbrirFicha?.(c.cotizacionId, 'cobros')} title="Ver ficha del viaje">
+                                {c.cliente}
+                              </button>
                               <div className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{c.cotizacionId}</div>
                             </td>
                             <td style={{ maxWidth: '260px' }}>{c.concepto}</td>

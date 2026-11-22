@@ -17,12 +17,13 @@ técnico actual, decisiones y brechas. Última actualización: 2026-10-30.
 
 | Módulo | Componente principal | Función |
 |---|---|---|
-| Cotizador (presupuestación) | `src/components/Cotizador/CotizadorView.jsx` → `Wizard/CotizadorWizard.jsx` | Wizard 3 pasos: datos+proveedores → servicios → resumen |
+| Cotizador por sabanas | `src/components/Cotizador/CotizadorView.jsx` → `Sabanas/CotizadorSabanas.jsx` | 4 pasos: sabanas por TTOO (Aero solo vuelo) → armar el set a mano → precio al cliente (fijo o %) → guardar |
 | Operadores | `src/components/Operadores/OperadoresView.jsx` | Alta de proveedores; el directorio se persiste y alimenta cotizador/configuración |
 | Configuración mensual | `src/components/Configuracion/ConfiguracionMensualView.jsx` | Bloques "día de emisión → fecha de pago" por proveedor y mes: edición manual, regla automática, plantilla estándar, copia entre meses, cobertura y aplicación masiva |
 | Cuentas a pagar | `src/components/Cobranzas/CalendarioPagosView.jsx` + `FlujoCajaBCP.jsx` | Calendario de vencimientos, liquidación por proveedor/fecha, flujo de caja auditable, CSV y registro de pagos |
 | Cuentas a cobrar | `src/components/Cobranzas/CalendarioCobrosView.jsx` | Cobros al cliente derivados del precio de venta, por mes |
-| Historial | `src/components/Historial/HistorialView.jsx` | Cotizaciones guardadas |
+| Historial | `src/components/Historial/HistorialView.jsx` | Cotizaciones guardadas; botón "Ver ficha" como acción principal |
+| Ficha del Viaje | `src/components/FichaViaje/FichaViaje.jsx` | Vista 360° de un viaje: datos y pasajeros, saldo y fecha de cobro, pagos a proveedores por bloque y documentos de Drive |
 | Dashboard | `src/components/Dashboard/DashboardView.jsx` | Métricas de ganancias y cobros |
 | Drive | `src/components/DriveViewer/DriveView.jsx` | Expedientes por cliente sincronizados con Google Drive |
 
@@ -91,7 +92,9 @@ funcionalidad nueva (decisión de producto), no solo técnica.
 - `npm run test:modelo` → **TODO OK** (65 asertos: modelo, BCP, acumulación por bloque, liquidación y pago consolidado FIFO, cobertura, monedas, CSV, pasajeros, copia entre meses y meses de 28/30/31 días).
 - `npm run test:ui` → **TODO OK** (4 renders SSR: flujo de caja con datos, vacío, multimoneda y configuración BCP).
 - `npm run test:runtime` → **TODO OK** (23 chequeos en Chrome headless: los 8 módulos renderizan sin excepciones, genera bloques BCP, carga vuelos de ejemplo y registra el pago consolidado de un bloque persistiéndolo en `localStorage`).
-- `npm run lint` → 0 errores, **53 warnings** (imports no usados, impurezas de `Date`/`Math.random`, `setState` en efectos).
+- `npm run lint` → 0 errores, **12 warnings** (impurezas de `Date`/`Math.random`, `setState` en efectos, deps de hooks en DriveView).
+- `npm run test:ficha` → **TODO OK (19 chequeos)**: abre la Ficha desde el Historial, recorre sus pestañas, abre y cierra el modal de cobro sin cerrar la ficha, y vuelve al módulo de origen.
+- `npm run test:sabanas` → **TODO OK (29 chequeos)**: carga sabanas de Aero y Azabache, arma un set mixto, verifica la pista de precio, recalcula el porcentaje en vivo, guarda y revisa la pestaña Comparación en la Ficha.
 - `npm run build` → **OK** (Vite; solo advierte por tamaño de chunk > 500 kB).
 
 ## 9. Riesgos técnicos relevantes

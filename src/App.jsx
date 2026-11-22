@@ -13,6 +13,7 @@ import ConfiguracionMensualView from './components/Configuracion/ConfiguracionMe
 import CalendarioPagosView from './components/Cobranzas/CalendarioPagosView';
 import CalendarioCobrosView from './components/Cobranzas/CalendarioCobrosView';
 import ConfirmDialog from './components/Common/ConfirmDialog';
+import FichaViaje from './components/FichaViaje/FichaViaje';
 import { STORAGE_KEY_QUOTES, STORAGE_KEY_OPERADORES, STORAGE_KEY_COBROS_CLIENTES, STORAGE_KEY_THEME } from './config/storage';
 
 import { INITIAL_COTIZACIONES, INITIAL_OPERADORES, INITIAL_CONFIGURACION_MENSUAL } from './data/initialData';
@@ -47,6 +48,8 @@ function buildEmptyQuote() {
     fechaViajeInicio: '',
     fechaViajeFin: '',
     fechaCotizacion: new Date().toISOString().split('T')[0],
+    // Cobros: campo simple de agenda. Las cotizaciones viejas usan fechaCotizacion.
+    fechaCobro: new Date().toISOString().split('T')[0],
     pax: 1,
     moneda: 'USD',
     estado: 'Borrador',
@@ -143,6 +146,19 @@ export default function App() {
 
   // Current quote loaded in the calculator (empieza en blanco)
   const [editingQuote, setEditingQuote] = useState(() => buildEmptyQuote());
+
+  // Ficha del Viaje: overlay con datos, cobros, pagos y documentos de un viaje.
+  // Al cerrar se vuelve al módulo que estaba activo, sin perder el contexto.
+  const [fichaViaje, setFichaViaje] = useState(null); // { id, tab }
+  const abrirFicha = useCallback((quoteOrId, tab = 'datos') => {
+    const id = typeof quoteOrId === 'string' ? quoteOrId : quoteOrId?.id;
+    if (id) setFichaViaje({ id, tab });
+  }, []);
+
+  const quoteFicha = useMemo(
+    () => (fichaViaje ? cotizaciones.find((q) => q.id === fichaViaje.id) || null : null),
+    [fichaViaje, cotizaciones]
+  );
 
   // Calendario de Pagos a TTOOs: pagos realizados (overlay) y pagos manuales
   const [pagosTTOO, setPagosTTOO] = useState(() => getStoredPagosTTOO());
@@ -593,6 +609,7 @@ export default function App() {
               onDeleteQuote={handleDeleteQuote}
               onDuplicateQuote={handleDuplicateQuote}
               onOpenClientDrive={handleOpenClientDrive}
+              onAbrirFicha={abrirFicha}
             />
           )}
 
@@ -601,6 +618,8 @@ export default function App() {
               selectedClientName={selectedClientForDrive}
               driveConfig={driveConfig}
               onOpenConfig={() => setActiveTab('configDrive')}
+              cotizaciones={cotizaciones}
+              onAbrirFicha={abrirFicha}
             />
           )}
 
@@ -617,6 +636,7 @@ export default function App() {
               cotizaciones={cotizaciones}
               onNavigateToCotizador={handleNewQuote}
               onNavigateToDrive={() => setActiveTab('drive')}
+              onAbrirFicha={abrirFicha}
             />
           )}
 
@@ -631,6 +651,7 @@ export default function App() {
               onRegistrarPagosLote={handleRegistrarPagosLote}
               onEliminarPago={handleEliminarPago}
               onEliminarPagoManual={handleEliminarPagoManual}
+              onAbrirFicha={abrirFicha}
             />
           )}
 
@@ -642,6 +663,7 @@ export default function App() {
               onRegistrarCobroCliente={handleRegistrarCobroCliente}
               onRegistrarCobrosClientesLote={handleRegistrarCobrosClientesLote}
               onEliminarCobroCliente={handleEliminarCobroCliente}
+              onAbrirFicha={abrirFicha}
             />
           )}
 
@@ -671,6 +693,28 @@ export default function App() {
         onConfirm={confirmarEliminarQuote}
         onCancel={() => setQuoteToDelete(null)}
       />
+
+      {/* Ficha del Viaje: se monta arriba de la vista activa para poder volver
+          al módulo de origen al cerrarla. */}
+      {fichaViaje && quoteFicha && (
+        <FichaViaje
+          key={`${fichaViaje.id}::${fichaViaje.tab}`}
+          quote={quoteFicha}
+          tabInicial={fichaViaje.tab}
+          onClose={() => setFichaViaje(null)}
+          cotizaciones={cotizaciones}
+          configMensual={configMensual}
+          pagosTTOO={pagosTTOO}
+          pagosClientes={pagosClientes}
+          onRegistrarCobrosClientesLote={handleRegistrarCobrosClientesLote}
+          onRegistrarPagosLote={handleRegistrarPagosLote}
+          onGuardarCotizacion={handleSaveQuote}
+          onEditarCotizacion={(q) => {
+            setFichaViaje(null);
+            handleEditQuote(q);
+          }}
+        />
+      )}
     </div>
   );
 }

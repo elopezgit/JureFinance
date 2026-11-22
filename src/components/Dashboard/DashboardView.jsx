@@ -20,7 +20,8 @@ import heroLayers from '../../assets/hero.svg';
 export default function DashboardView({
   cotizaciones = [],
   onNavigateToCotizador,
-  onNavigateToDrive
+  onNavigateToDrive,
+  onAbrirFicha
 }) {
   let totalCotizadoVenta = 0;
   let totalNetoAgencia = 0;
@@ -211,11 +212,22 @@ export default function DashboardView({
                   <div
                     key={idx}
                     className="row-soft"
+                    role="button"
+                    tabIndex={0}
+                    title="Ver ficha del viaje"
+                    onClick={() => onAbrirFicha?.(dl.quoteId, 'pagos')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onAbrirFicha?.(dl.quoteId, 'pagos');
+                      }
+                    }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: '12px',
+                      cursor: 'pointer',
                       background: isUrgent ? 'var(--danger-bg)' : undefined,
                       borderColor: isUrgent ? 'var(--danger-border)' : undefined
                     }}
