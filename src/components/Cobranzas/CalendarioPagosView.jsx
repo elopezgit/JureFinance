@@ -16,7 +16,7 @@ import {
   Users
 } from 'lucide-react';
 import CalendarioMensual from '../Calendario/CalendarioMensual';
-import FlujoCajaBCP from './FlujoCajaBCP';
+import FlujoCajaBSP from './FlujoCajaBSP';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import RegistrarPagoLiquidacionModal from '../Common/RegistrarPagoLiquidacionModal';
 import { ventaTotalCotizacion, cobrosPorMes } from '../../services/cobroService';
@@ -234,7 +234,7 @@ export default function CalendarioPagosView({
   const [pagoActivo, setPagoActivo] = useState(null);
   const [pagoAEliminar, setPagoAEliminar] = useState(null);
   const [pagoDetalle, setPagoDetalle] = useState(null);
-  const [vistaActual, setVistaActual] = useState('liquidaciones'); // 'liquidaciones' (BCP) | 'calendario' | 'obligaciones'
+  const [vistaActual, setVistaActual] = useState('liquidaciones'); // 'liquidaciones' (BSP) | 'calendario' | 'obligaciones'
   const [liquidacionActiva, setLiquidacionActiva] = useState(null);
   const [verTodosLosMeses, setVerTodosLosMeses] = useState(false);
   const [moneda, setMoneda] = useState('todas');
@@ -306,7 +306,7 @@ export default function CalendarioPagosView({
     const url = URL.createObjectURL(blob);
     const enlace = document.createElement('a');
     enlace.href = url;
-    enlace.download = `flujo-caja-bcp-${verTodosLosMeses ? 'todos-los-meses' : mes}.csv`;
+    enlace.download = `flujo-caja-bsp-${verTodosLosMeses ? 'todos-los-meses' : mes}.csv`;
     document.body.appendChild(enlace);
     enlace.click();
     enlace.remove();
@@ -490,13 +490,13 @@ export default function CalendarioPagosView({
       <div className="view-header" style={{ marginBottom: '18px' }}>
         <div className="section-heading">
           <Wallet size={16} />
-          <span>Módulo Financiero · Pagos a Proveedores (BCP)</span>
+          <span>Módulo Financiero · Pagos a Proveedores (BSP)</span>
         </div>
       </div>
 
       <div className="toolbar" style={{ marginBottom: '18px', gap: '8px', flexWrap: 'wrap' }}>
         {[
-          { id: 'liquidaciones', label: 'Liquidaciones (BCP)' },
+          { id: 'liquidaciones', label: 'Liquidaciones (BSP)' },
           { id: 'cajas', label: 'Caja por proveedor' },
           { id: 'rentabilidad', label: 'Rentabilidad' },
           { id: 'flujo', label: 'Flujo neto' },
@@ -776,7 +776,7 @@ export default function CalendarioPagosView({
             <Info size={16} style={{ color: 'var(--warning)' }} />
             <span style={{ fontSize: '0.82rem' }}>
               Hay <strong>{sinFecha.length}</strong> obligación(es) sin fecha de vencimiento. Completá
-              el vencimiento en la oferta o, si es un aéreo, configurá los bloques BCP del
+              el vencimiento en la oferta o, si es un aéreo, configurá los bloques BSP del
               proveedor para el mes de emisión.
             </span>
           </div>
@@ -1027,7 +1027,7 @@ export default function CalendarioPagosView({
 
       {vistaActual === 'liquidaciones' && (
         <>
-          <FlujoCajaBCP
+          <FlujoCajaBSP
             pagos={pagosPeriodo}
             mes={mes}
             onCambiarMes={cambiarMes}
@@ -1092,8 +1092,8 @@ export default function CalendarioPagosView({
                           {liq.fechaVencimiento ? `Vence ${formatFechaLarga(liq.fechaVencimiento)}` : 'Sin fecha'}
                         </span>
                         {liq.rangoCorto && (
-                          <span className="badge badge-info" title={liq.rangoBCP}>
-                            BCP {liq.rangoCorto}
+                          <span className="badge badge-info" title={liq.rangoBSP}>
+                            BSP {liq.rangoCorto}
                           </span>
                         )}
                         <span className={`badge ${etiqueta.badge}`}>{etiqueta.texto}</span>
@@ -1103,9 +1103,9 @@ export default function CalendarioPagosView({
                       </span>
                     </div>
 
-                    {liq.rangoBCP && (
+                    {liq.rangoBSP && (
                       <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                        {liq.rangoBCP}
+                        {liq.rangoBSP}
                       </div>
                     )}
 
@@ -1188,7 +1188,7 @@ export default function CalendarioPagosView({
               <div><strong>Saldo:</strong> {formatearMonto(Math.max(pagoDetalle.saldo, 0), pagoDetalle.moneda)}</div>
               <div><strong>Estado:</strong> {pagoDetalle.estado}</div>
               <div><strong>Vencimiento:</strong> {formatFechaLarga(pagoDetalle.fechaVencimiento)}</div>
-              {pagoDetalle.rangoBCPCorto && <div><strong>Bloque BCP:</strong> {pagoDetalle.rangoBCPCorto}</div>}
+              {pagoDetalle.rangoBSPCorto && <div><strong>Bloque BSP:</strong> {pagoDetalle.rangoBSPCorto}</div>}
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary btn-sm" onClick={() => setPagoDetalle(null)}>

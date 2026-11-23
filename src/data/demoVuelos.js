@@ -112,7 +112,7 @@ export function buildDemoVuelosEmitidos(hoy = new Date()) {
             estadoVuelo: 'Emitido',
             fechaReserva,
             fechaEmision,
-            reglaVencimiento: 'bcp',
+            reglaVencimiento: 'bsp',
             ofertaCompraId: `of-aero-demo-${n}`,
             ofertas: [
               {

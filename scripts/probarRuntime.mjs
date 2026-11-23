@@ -1,9 +1,9 @@
-// Smoke test de runtime del módulo BCP (y de la navegación principal).
+// Smoke test de runtime del módulo BSP (y de la navegación principal).
 //
 // Levanta el dev server si hace falta, abre la app en Chrome headless vía CDP,
 // recorre todos los módulos y verifica que rendericen sin excepciones de JS.
 // También ejercita las acciones nuevas: cargar vuelos de ejemplo, generar
-// bloques BCP y el reporte de flujo de caja.
+// bloques BSP y el reporte de flujo de caja.
 //
 // Uso: npm run test:runtime
 import { spawn } from 'node:child_process'
@@ -231,19 +231,19 @@ try {
     )
   }
 
-  // Módulo BCP: reporte de flujo de caja.
+  // Módulo BSP: reporte de flujo de caja.
   await cdp.clickPorTexto('Calendario de Pagos')
   await dormir(900)
   const pagos = await cdp.texto()
-  chequear('abre el reporte de flujo de caja BCP', /flujo de caja por día de vencimiento/i.test(pagos))
+  chequear('abre el reporte de flujo de caja BSP', /flujo de caja por día de vencimiento/i.test(pagos))
   chequear('muestra el total general del período', /total general/i.test(pagos))
   chequear('separa los totales por moneda', /usd/i.test(pagos))
 
-  // Configuración BCP: generar bloques por regla.
+  // Configuración BSP: generar bloques por regla.
   await cdp.clickPorTexto('Configuración Mensual TTOs')
   await dormir(900)
   const configTexto = await cdp.texto()
-  chequear('abre la configuración mensual BCP', /cobertura de/i.test(configTexto))
+  chequear('abre la configuración mensual BSP', /cobertura de/i.test(configTexto))
   chequear('muestra los bloques de emisión', /emisiones del/i.test(configTexto))
 
   const siguiente = await cdp.clickPorTitle('mes siguiente')

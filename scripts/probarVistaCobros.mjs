@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import CalendarioCobrosView from '../src/components/Cobranzas/CalendarioCobrosView.jsx';
 import RegistrarCobroModal from '../src/components/Cobranzas/RegistrarCobroModal.jsx';
 import { derivarCobrosDesdeCotizaciones } from '../src/services/cobroService.js';
+import { hoyISO } from '../src/services/calendarioService.js';
 
 let fallas = 0;
 function check(nombre, fn) {
@@ -25,7 +26,8 @@ const cotizacion = {
   moneda: 'USD',
   pax: 2,
   estado: 'Aceptada',
-  fechaViajeInicio: '2026-11-18',
+  // La agenda por defecto filtra "esta semana": usar hoy mantiene el test vigente.
+  fechaViajeInicio: hoyISO(),
   precioVentaTotalManual: 3800,
   servicios: {
     items: [

@@ -1,4 +1,4 @@
-// ConfiguracionMensualView.jsx - Módulo 1: Configuración Mensual de TTOs (BCP)
+// ConfiguracionMensualView.jsx - Módulo 1: Configuración Mensual de TTOs (BSP)
 // Los proveedores definen los bloques de fechas de emisión y su fecha límite de
 // pago. Esta pantalla permite cargarlos a mano, generarlos por regla, copiarlos
 // entre meses, aplicarlos a todos los proveedores y ver la cobertura del mes.
@@ -551,7 +551,7 @@ export default function ConfiguracionMensualView({
             </div>
             <div>
               <h3 className="card-title">Mes y proveedor a configurar</h3>
-              <p className="card-subtitle">Cada proveedor tiene su propio calendario BCP</p>
+              <p className="card-subtitle">Cada proveedor tiene su propio calendario BSP</p>
             </div>
           </div>
 
@@ -889,7 +889,7 @@ export default function ConfiguracionMensualView({
                     title={
                       bloque
                         ? `Día ${dia}: bloque ${bloque.desde}-${bloque.hasta} · paga ${bloque.fechaPago || 'sin fecha'}`
-                        : `Día ${dia}: sin bloque BCP`
+                        : `Día ${dia}: sin bloque BSP`
                     }
                     style={{
                       width: '28px',

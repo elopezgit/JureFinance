@@ -278,7 +278,7 @@ export default function CotizadorSabanas({
         estadoReserva: tipo !== 'aereo' ? 'Reservado' : undefined,
         fechaEmision: linea.fechaEmision || '',
         fechaReserva: linea.fechaReserva || '',
-        reglaVencimiento: tipo === 'aereo' ? 'bcp' : 'semanaAntesViaje',
+        reglaVencimiento: tipo === 'aereo' ? 'bsp' : 'semanaAntesViaje',
         tramos: []
       };
     });

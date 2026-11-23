@@ -288,7 +288,7 @@ export function createEmptyItem(tipo, { proveedorId = '', proveedor = '', fechaR
       estadoVuelo: 'SinReservar',
       fechaReserva: fechaReserva || '',
       fechaEmision: '',
-      reglaVencimiento: 'bcp',
+      reglaVencimiento: 'bsp',
       tramos: []
     };
   }
@@ -400,7 +400,7 @@ export function normalizarItem(item) {
       ? item.tramos.map((tramo) => ({ ...createEmptyTramo(), ...tramo }))
       : [];
 
-    const reglaVencimiento = 'bcp';
+    const reglaVencimiento = 'bsp';
 
     return {
       ...base,

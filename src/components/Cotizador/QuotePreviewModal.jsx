@@ -3,7 +3,7 @@
 // El presupuesto que recibe el cliente se arma fuera de la app con el constructor
 // de PDF del proveedor (ej. Azabache). Este documento es de uso interno de JureTravel:
 // muestra los costos guardados por separado de cada proveedor (Aero vs Azabache),
-// las fechas de pago (BCP vs 7 días antes del viaje), el precio final
+// las fechas de pago (BSP vs 7 días antes del viaje), el precio final
 // al cliente y la ganancia real.
 import React, { useRef } from 'react';
 import {
@@ -36,7 +36,7 @@ import {
   totalGananciaItems,
   margenVentaItems
 } from '../../services/serviciosService';
-import { getBloqueBCP } from '../../services/ttoService';
+import { getBloqueBSP } from '../../services/ttoService';
 import { formatFechaLarga } from '../../services/calendarioService';
 import { useModalA11y } from '../../hooks/useModalA11y';
 
@@ -82,8 +82,8 @@ export default function QuotePreviewModal({ quote, configMensual = [], onClose }
     if (compra.vencimientoTTOO) return `Pago ${formatFechaLarga(compra.vencimientoTTOO)} (manual)`;
     if (item.tipo === 'aereo') {
       if (!item.fechaEmision) return 'Sin fecha de emisión';
-      const b = getBloqueBCP(configMensual, compra.proveedor || 'Aero', item.fechaEmision);
-      return b ? `Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}` : 'Sin bloque BCP';
+      const b = getBloqueBSP(configMensual, compra.proveedor || 'Aero', item.fechaEmision);
+      return b ? `Bloque ${b.rangoCorto} → Pago ${formatFechaLarga(b.fechaPago)}` : 'Sin bloque BSP';
     }
     // Terrestres: pagado 7 días antes del viaje.
     return 'Pago 7 días antes del viaje';

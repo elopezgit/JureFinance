@@ -10,7 +10,7 @@ técnico actual, decisiones y brechas. Última actualización: 2026-10-30.
 - **Stack:** React 19.2.8 + Vite 8.3.0, JS (sin TS), CSS variables.
 - **Dependencias runtime:** `react`, `react-dom`, `lucide-react`.
 - **Dev:** `@vitejs/plugin-react`, `oxlint`, `vite`.
-- **Scripts:** `dev`, `build`, `lint`, `test:modelo` (SSR del modelo), `test:ui` (SSR de las vistas BCP), `test:runtime` (navegación real con Chrome headless), `preview`.
+- **Scripts:** `dev`, `build`, `lint`, `test:modelo` (SSR del modelo), `test:ui` (SSR de las vistas BSP), `test:runtime` (navegación real con Chrome headless), `preview`.
 - **No es repo git** en el entorno actual (no hay control de versiones).
 
 ## 2. Módulos y archivos clave
@@ -20,7 +20,7 @@ técnico actual, decisiones y brechas. Última actualización: 2026-10-30.
 | Cotizador por sabanas | `src/components/Cotizador/CotizadorView.jsx` → `Sabanas/CotizadorSabanas.jsx` | 4 pasos: sabanas por TTOO (Aero solo vuelo) → armar el set a mano → precio al cliente (fijo o %) → guardar |
 | Operadores | `src/components/Operadores/OperadoresView.jsx` | Alta de proveedores; el directorio se persiste y alimenta cotizador/configuración |
 | Configuración mensual | `src/components/Configuracion/ConfiguracionMensualView.jsx` | Bloques "día de emisión → fecha de pago" por proveedor y mes: edición manual, regla automática, plantilla estándar, copia entre meses, cobertura y aplicación masiva |
-| Cuentas a pagar | `src/components/Cobranzas/CalendarioPagosView.jsx` + `FlujoCajaBCP.jsx` | Calendario de vencimientos, liquidación por proveedor/fecha, flujo de caja auditable, CSV y registro de pagos |
+| Cuentas a pagar | `src/components/Cobranzas/CalendarioPagosView.jsx` + `FlujoCajaBSP.jsx` | Calendario de vencimientos, liquidación por proveedor/fecha, flujo de caja auditable, CSV y registro de pagos |
 | Cuentas a cobrar | `src/components/Cobranzas/CalendarioCobrosView.jsx` | Cobros al cliente derivados del precio de venta, por mes |
 | Historial | `src/components/Historial/HistorialView.jsx` | Cotizaciones guardadas; botón "Ver ficha" como acción principal |
 | Ficha del Viaje | `src/components/FichaViaje/FichaViaje.jsx` | Vista 360° de un viaje: datos y pasajeros, saldo y fecha de cobro, pagos a proveedores por bloque y documentos de Drive |
@@ -29,7 +29,7 @@ técnico actual, decisiones y brechas. Última actualización: 2026-10-30.
 
 Servicios (`src/services/`):
 - `serviciosService.js` — modelo de servicios: venta + ofertas de compra. `normalizarServicios`, `createEmptyItem`, `createEmptyOferta`, `ofertaCompraDe`, `totalVentaItems`, `totalCostoItems`, `totalGananciaItems`.
-- `ttoService.js` — reglas de fechas de pago de los TTOO. `getFechaPagoTTOO`, `getBloqueBCP`, `getBloquesBCPPorVencimiento`, `validarCoberturaMes`, `validateBloques`, `generarBloquesDesdeRegla`, `desplazarBloquesAMes`, `getMesActual`.
+- `ttoService.js` — reglas de fechas de pago de los TTOO. `getFechaPagoTTOO`, `getBloqueBSP`, `getBloquesBSPPorVencimiento`, `validarCoberturaMes`, `validateBloques`, `generarBloquesDesdeRegla`, `desplazarBloquesAMes`, `getMesActual`.
 - `calendarioService.js` — obligaciones, pagos, liquidaciones por bloque y reporte. `construirAgendaPagos`, `resumenAgendaPagos`, `aplicarPagos`, `liquidacionesPorProveedorYFecha`, `repartirPagoEnLiquidacion`, `totalesPorMoneda`, `agruparPorFechaVencimiento`, `agruparTicketsPorProveedor`, `generarCSVFlujoCaja`.
 - `driveService.js` — puente con Google Drive (Apps Script v3.1).
 - `cobroService.js` — cobranzas.
@@ -84,14 +84,14 @@ funcionalidad nueva (decisión de producto), no solo técnica.
 2. Precio de venta a mano (se transcribe del PDF externo por servicio; sin integración automática).
 3. Claves de almacenamiento duplicadas: `STORAGE_KEY_QUOTES` (`App.jsx`) y `STORAGE_KEY_DB` (`driveService.js`) valen lo mismo (`jurefinance_quotes_v1`).
 4. Sincronización last-write-wins, sin resolución de conflictos.
-5. Tests: hay pruebas SSR del modelo (`scripts/probarModelo.mjs`), de las vistas BCP (`scripts/probarUI.mjs`) y un smoke test de navegación real (`scripts/probarRuntime.mjs`), pero falta una suite con Vitest.
+5. Tests: hay pruebas SSR del modelo (`scripts/probarModelo.mjs`), de las vistas BSP (`scripts/probarUI.mjs`) y un smoke test de navegación real (`scripts/probarRuntime.mjs`), pero falta una suite con Vitest.
 6. El directorio de operadores se persiste en `localStorage`; todavía no viaja en el respaldo de Google Drive, por lo que un proveedor nuevo no se sincroniza entre equipos.
 
 ## 8. Validación actual
 
-- `npm run test:modelo` → **TODO OK** (65 asertos: modelo, BCP, acumulación por bloque, liquidación y pago consolidado FIFO, cobertura, monedas, CSV, pasajeros, copia entre meses y meses de 28/30/31 días).
-- `npm run test:ui` → **TODO OK** (4 renders SSR: flujo de caja con datos, vacío, multimoneda y configuración BCP).
-- `npm run test:runtime` → **TODO OK** (23 chequeos en Chrome headless: los 8 módulos renderizan sin excepciones, genera bloques BCP, carga vuelos de ejemplo y registra el pago consolidado de un bloque persistiéndolo en `localStorage`).
+- `npm run test:modelo` → **TODO OK** (65 asertos: modelo, BSP, acumulación por bloque, liquidación y pago consolidado FIFO, cobertura, monedas, CSV, pasajeros, copia entre meses y meses de 28/30/31 días).
+- `npm run test:ui` → **TODO OK** (4 renders SSR: flujo de caja con datos, vacío, multimoneda y configuración BSP).
+- `npm run test:runtime` → **TODO OK** (23 chequeos en Chrome headless: los 8 módulos renderizan sin excepciones, genera bloques BSP, carga vuelos de ejemplo y registra el pago consolidado de un bloque persistiéndolo en `localStorage`).
 - `npm run lint` → 0 errores, **12 warnings** (impurezas de `Date`/`Math.random`, `setState` en efectos, deps de hooks en DriveView).
 - `npm run test:ficha` → **TODO OK (19 chequeos)**: abre la Ficha desde el Historial, recorre sus pestañas, abre y cierra el modal de cobro sin cerrar la ficha, y vuelve al módulo de origen.
 - `npm run test:sabanas` → **TODO OK (29 chequeos)**: carga sabanas de Aero y Azabache, arma un set mixto, verifica la pista de precio, recalcula el porcentaje en vivo, guarda y revisa la pestaña Comparación en la Ficha.

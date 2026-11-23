@@ -1,6 +1,6 @@
-// FlujoCajaBCP.jsx - Reporte financiero del Calendario BCP
+// FlujoCajaBSP.jsx - Reporte financiero del Calendario BSP
 // Muestra el total a desembolsar por fecha de vencimiento y el detalle de los
-// tickets (cliente + PAX + cotización + emisión + rango BCP) que componen cada
+// tickets (cliente + PAX + cotización + emisión + rango BSP) que componen cada
 // monto. Los totales siempre se separan por moneda.
 import React, { useMemo, useState } from 'react';
 import {
@@ -43,7 +43,7 @@ function textoBusqueda(p) {
   } ${p.proveedor || ''}`.toLowerCase();
 }
 
-export default function FlujoCajaBCP({
+export default function FlujoCajaBSP({
   pagos = [],
   mes,
   onCambiarMes,
@@ -87,7 +87,7 @@ export default function FlujoCajaBCP({
     }
     if (filtroRegla !== 'todas') {
       base = base.filter((p) => {
-        if (filtroRegla === 'bcp') return p.origenVencimiento === 'bcp';
+        if (filtroRegla === 'bsp') return p.origenVencimiento === 'bsp';
         if (filtroRegla === 'semana') return p.origenVencimiento === 'semana-antes-viaje';
         if (filtroRegla === 'manual') return p.origenVencimiento === 'manual';
         if (filtroRegla === 'sinfecha') return !p.fechaVencimiento;
@@ -233,7 +233,7 @@ export default function FlujoCajaBCP({
 
             <select className="select-field" value={filtroRegla} onChange={(e) => setFiltroRegla(e.target.value)} title="Regla de vencimiento">
               <option value="todas">Todas las reglas</option>
-              <option value="bcp">BCP</option>
+              <option value="bsp">BSP</option>
               <option value="semana">7 días antes del viaje</option>
               <option value="manual">Manual</option>
               <option value="sinfecha">Sin fecha</option>
@@ -443,7 +443,7 @@ export default function FlujoCajaBCP({
             <div className="empty-state">
               <div className="empty-state-icon"><CalendarClock size={24} /></div>
               <h3>Sin vencimientos en el período</h3>
-              <p>Cargá emisiones con fecha o configurá el calendario BCP del proveedor para ver el flujo de caja.</p>
+              <p>Cargá emisiones con fecha o configurá el calendario BSP del proveedor para ver el flujo de caja.</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -494,7 +494,7 @@ export default function FlujoCajaBCP({
                       <div className="row-soft is-alert" style={{ marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <AlertTriangle size={15} style={{ color: 'var(--warning)' }} />
                         <span style={{ fontSize: '0.8rem' }}>
-                          Estas obligaciones no tienen fecha de pago. Completá el vencimiento en la oferta o, si es un aéreo, configurá el BCP del proveedor.
+                          Estas obligaciones no tienen fecha de pago. Completá el vencimiento en la oferta o, si es un aéreo, configurá el BSP del proveedor.
                         </span>
                       </div>
                     )}
@@ -540,7 +540,7 @@ export default function FlujoCajaBCP({
                                       <th scope="col">Cliente / PAX</th>
                                       <th scope="col">Concepto / Destino</th>
                                       {detallado && <th scope="col">Emisión</th>}
-                                      {detallado && <th scope="col">Rango BCP</th>}
+                                      {detallado && <th scope="col">Rango BSP</th>}
                                       <th scope="col" style={{ textAlign: 'right' }}>Total</th>
                                       {detallado && <th scope="col" style={{ textAlign: 'right' }}>Pagado</th>}
                                       <th scope="col" style={{ textAlign: 'right' }}>Saldo</th>
@@ -569,7 +569,7 @@ export default function FlujoCajaBCP({
                                             <div style={{ fontWeight: 600 }}>{pago.concepto}</div>
                                             <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                                               {pago.destino || pago.seccionLabel}
-                                              {pago.origenVencimiento === 'manual' ? ' · vencimiento manual' : pago.origenVencimiento === 'bcp' ? ' · calculado por BCP' : pago.origenVencimiento === 'semana-antes-viaje' ? ' · 7 días antes del viaje' : ''}
+                                              {pago.origenVencimiento === 'manual' ? ' · vencimiento manual' : pago.origenVencimiento === 'bsp' ? ' · calculado por BSP' : pago.origenVencimiento === 'semana-antes-viaje' ? ' · 7 días antes del viaje' : ''}
                                             </div>
                                             {(pago.precioVenta > 0) && (
                                               <div style={{ fontSize: '0.71rem', color: 'var(--neon-cyan)', marginTop: '3px' }}>
@@ -593,14 +593,14 @@ export default function FlujoCajaBCP({
                                           )}
                                           {detallado && (
                                             <td>
-                                              {pago.rangoBCP ? (
-                                                <span title={pago.rangoBCP}>
+                                              {pago.rangoBSP ? (
+                                                <span title={pago.rangoBSP}>
                                                   <span className={`badge ${pago.origenVencimiento === 'semana-antes-viaje' ? 'badge-warning' : 'badge-info'}`}>
-                                                    {pago.rangoBCPCorto || pago.rangoBCP}
+                                                    {pago.rangoBSPCorto || pago.rangoBSP}
                                                   </span>
                                                 </span>
                                               ) : (
-                                                <span className="badge badge-neutral">Sin BCP</span>
+                                                <span className="badge badge-neutral">Sin BSP</span>
                                               )}
                                             </td>
                                           )}
@@ -640,7 +640,7 @@ export default function FlujoCajaBCP({
           <div style={{ marginTop: '14px', display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
             <Info size={14} />
             <span>
-              El detalle incluye cliente, pasajeros (si se cargaron), cantidad de PAX, cotización y rango BCP para auditar cada monto. Los totales no mezclan monedas. Activá "Vista detallada" para ver emisión, rango BCP y pagado.
+              El detalle incluye cliente, pasajeros (si se cargaron), cantidad de PAX, cotización y rango BSP para auditar cada monto. Los totales no mezclan monedas. Activá "Vista detallada" para ver emisión, rango BSP y pagado.
             </span>
           </div>
         </div>

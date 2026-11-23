@@ -183,7 +183,7 @@ export default function App() {
   });
 
   // Directorio de proveedores (TTOO). Se persiste localmente para que un
-  // proveedor nuevo esté disponible en el cotizador y en la configuración BCP.
+  // proveedor nuevo esté disponible en el cotizador y en la configuración BSP.
   const [operadores, setOperadores] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_OPERADORES);

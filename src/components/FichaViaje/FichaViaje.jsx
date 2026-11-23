@@ -554,7 +554,7 @@ export default function FichaViaje({
                           <span className="badge badge-info">
                             {liq.fechaVencimiento ? `Vence ${formatFechaLarga(liq.fechaVencimiento)}` : 'Sin fecha'}
                           </span>
-                          {liq.rangoBCP && <span className="jf-ficha-nota">{liq.rangoBCP}</span>}
+                          {liq.rangoBSP && <span className="jf-ficha-nota">{liq.rangoBSP}</span>}
                           <span className="jf-ficha-nota" style={{ marginLeft: 'auto' }}>
                             {liq.cantidad} obligación(es)
                           </span>

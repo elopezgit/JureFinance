@@ -5,8 +5,8 @@
 
 import {
   getFechaPagoTTOO,
-  getBloqueBCP,
-  getBloquesBCPPorVencimiento,
+  getBloqueBSP,
+  getBloquesBSPPorVencimiento,
   getMesFromFecha,
   sumarDiasISO
 } from './ttoService';
@@ -158,26 +158,26 @@ function pagoDesdeItem(quote, item, configMensual) {
 
   let fechaVencimiento = item.vencimientoTTOO || '';
   let origenVencimiento = fechaVencimiento ? 'manual' : '';
-  let bloqueBCP = null;
-  let rangoBCP = '';
-  let rangoBCPCorto = '';
+  let bloqueBSP = null;
+  let rangoBSP = '';
+  let rangoBSPCorto = '';
 
   if (esAereo && !fechaVencimiento && item.fechaEmision) {
-    // Regla de Aero (BCP): las emisiones se liquidan según los umbrales del mes.
-    bloqueBCP = getBloqueBCP(
+    // Regla de Aero (BSP): las emisiones se liquidan según los umbrales del mes.
+    bloqueBSP = getBloqueBSP(
       configMensual,
       item.proveedor || 'Aero',
       item.fechaEmision
     );
-    if (bloqueBCP) {
+    if (bloqueBSP) {
       fechaVencimiento = getFechaPagoTTOO(
         configMensual,
         item.proveedor || 'Aero',
         item.fechaEmision
       );
-      origenVencimiento = fechaVencimiento ? 'bcp' : 'sin-config';
-      rangoBCP = bloqueBCP?.rangoLabel || '';
-      rangoBCPCorto = bloqueBCP?.rangoCorto || '';
+      origenVencimiento = fechaVencimiento ? 'bsp' : 'sin-config';
+      rangoBSP = bloqueBSP?.rangoLabel || '';
+      rangoBSPCorto = bloqueBSP?.rangoCorto || '';
     } else {
       origenVencimiento = 'sin-config';
     }
@@ -186,8 +186,8 @@ function pagoDesdeItem(quote, item, configMensual) {
     if (fechaViajeInicio) {
       fechaVencimiento = sumarDiasISO(fechaViajeInicio, -7);
       origenVencimiento = fechaVencimiento ? 'semana-antes-viaje' : 'sin-fecha';
-      rangoBCP = 'Pago 7 días antes del viaje';
-      rangoBCPCorto = '7 días antes';
+      rangoBSP = 'Pago 7 días antes del viaje';
+      rangoBSPCorto = '7 días antes';
     } else if (fechaOperacion && item.estadoReserva !== 'SinReservar') {
       // Sin fecha de viaje: sin vencimiento calculable.
       origenVencimiento = 'sin-fecha';
@@ -226,9 +226,9 @@ function pagoDesdeItem(quote, item, configMensual) {
     fechaReserva: item.fechaReserva || '',
     fechaViajeInicio,
     fechaViajeFin,
-    bloqueBCP,
-    rangoBCP,
-    rangoBCPCorto,
+    bloqueBSP,
+    rangoBSP,
+    rangoBSPCorto,
     moneda: quote.moneda || 'USD',
     montoTotal: Number(item.montoTotalNeto) || 0,
     precioVenta: precioVentaItem(item),
@@ -356,7 +356,7 @@ export function resumenAgendaPagos(pagos = [], hoy = hoyISO()) {
 /* --------------------------------------------------------------------------
    Flujo de caja por fecha de vencimiento
    --------------------------------------------------------------------------
-   El BCP acumula emisiones y las paga en una fecha. Para el reporte financiero
+   El BSP acumula emisiones y las paga en una fecha. Para el reporte financiero
    necesitamos ver, por cada fecha de pago, cuánto hay que desembolsar y qué
    tickets (cliente + PAX + cotización) componen ese monto. Nunca se suman
    monedas distintas: cada moneda se totaliza por separado.
@@ -490,7 +490,7 @@ function csvValor(valor) {
 
 /**
  * Genera el CSV de auditoría del flujo de caja: una fila por ticket con su
- * fecha de pago, proveedor, cliente, PAX, emisión, rango BCP y saldo.
+ * fecha de pago, proveedor, cliente, PAX, emisión, rango BSP y saldo.
  */
 export function generarCSVFlujoCaja(pagos = []) {
   const columnas = [
@@ -504,7 +504,7 @@ export function generarCSVFlujoCaja(pagos = []) {
     'Cotización',
     'Concepto',
     'Fecha de emisión',
-    'Rango BCP',
+    'Rango BSP',
     'Total',
     'Pagado',
     'Saldo',
@@ -531,7 +531,7 @@ export function generarCSVFlujoCaja(pagos = []) {
         pago.cotizacionId || '',
         pago.concepto || '',
         pago.fechaEmision || '',
-        pago.rangoBCP || '',
+        pago.rangoBSP || '',
         Number(pago.montoTotal) || 0,
         Number(pago.pagado) || 0,
         Math.max(
@@ -568,7 +568,7 @@ export function claveLiquidacion(pago) {
 /**
  * Agrupa las obligaciones (pagos) en liquidaciones por proveedor y fecha de pago.
  * @param {Array} pagos obligaciones ya resueltas (salida de construirAgendaPagos)
- * @param {Array} configMensual configuración BCP opcional para resolver rangos
+ * @param {Array} configMensual configuración BSP opcional para resolver rangos
  * @returns {Array} liquidaciones ordenadas por fecha (las sin fecha van al final)
  */
 export function liquidacionesPorProveedorYFecha(pagos = [], configMensual = []) {
@@ -600,7 +600,7 @@ export function liquidacionesPorProveedorYFecha(pagos = [], configMensual = []) 
 
   return [...mapa.values()]
     .map((liq) => {
-      // Resuelve TODOS los bloques BCP que caen en esta fecha (puede haber
+      // Resuelve TODOS los bloques BSP que caen en esta fecha (puede haber
       // varios rangos consolidados en el mismo día de pago).
       const bloques = [];
       const vistos = new Set();
@@ -612,7 +612,7 @@ export function liquidacionesPorProveedorYFecha(pagos = [], configMensual = []) 
         bloques.push(bloque);
       };
 
-      liq.items.forEach((it) => agregarBloque(it.bloqueBCP));
+      liq.items.forEach((it) => agregarBloque(it.bloqueBSP));
 
       if (configMensual.length && liq.fechaVencimiento) {
         // Si algún ítem no trae el bloque resuelto, se busca en la configuración
@@ -627,7 +627,7 @@ export function liquidacionesPorProveedorYFecha(pagos = [], configMensual = []) 
 
         if (mesesEmision.length > 0) {
           mesesEmision.forEach((mesEmision) => {
-            getBloquesBCPPorVencimiento(
+            getBloquesBSPPorVencimiento(
               configMensual,
               liq.proveedor,
               liq.fechaVencimiento,
@@ -635,7 +635,7 @@ export function liquidacionesPorProveedorYFecha(pagos = [], configMensual = []) 
             ).forEach(agregarBloque);
           });
         } else {
-          getBloquesBCPPorVencimiento(
+          getBloquesBSPPorVencimiento(
             configMensual,
             liq.proveedor,
             liq.fechaVencimiento
@@ -644,16 +644,16 @@ export function liquidacionesPorProveedorYFecha(pagos = [], configMensual = []) 
       }
 
       const totalPax = liq.items.reduce((acc, it) => acc + (Number(it.pax) || 1), 0);
-      const rangoBCP = bloques.map((b) => b.rangoLabel).join(' · ');
+      const rangoBSP = bloques.map((b) => b.rangoLabel).join(' · ');
       const rangoCorto = bloques.map((b) => b.rangoCorto).join(' · ');
 
       return {
         ...liq,
         cantidad: liq.items.length,
         totalPax,
-        bloqueBCP: bloques[0] || null,
-        bloquesBCP: bloques,
-        rangoBCP,
+        bloqueBSP: bloques[0] || null,
+        bloquesBSP: bloques,
+        rangoBSP,
         rangoCorto,
         esConsolidable: Boolean(liq.fechaVencimiento),
         estado: estadoPago({ montoTotal: liq.montoTotal, pagado: liq.pagado })

@@ -73,15 +73,15 @@ export function getFechaPagoAereoEmitido(fechaEmision, plazoHoras = 48) {
  * @returns {string} fecha ISO 'YYYY-MM-DD' o '' si no hay coincidencia.
  */
 export function getFechaPagoTTOO(configMensual, proveedorId, fechaBase) {
-  const bloque = getBloqueBCP(configMensual, proveedorId, fechaBase);
+  const bloque = getBloqueBSP(configMensual, proveedorId, fechaBase);
   return bloque?.fechaPago || '';
 }
 
 /**
- * Obtiene el bloque BCP al que pertenece una fecha de emisión para un proveedor.
+ * Obtiene el bloque BSP al que pertenece una fecha de emisión para un proveedor.
  * @returns {{ desde: number, hasta: number, fechaPago: string, rangoLabel: string, rangoCorto: string } | null}
  */
-export function getBloqueBCP(configMensual, proveedorId, fechaEmision) {
+export function getBloqueBSP(configMensual, proveedorId, fechaEmision) {
   const mes = getMesFromFecha(fechaEmision);
   const dia = getDiaFromFecha(fechaEmision);
   if (!mes || !dia) return null;
@@ -106,11 +106,11 @@ export function getBloqueBCP(configMensual, proveedorId, fechaEmision) {
 }
 
 /**
- * Busca TODOS los bloques BCP que vencen en una fecha dada. Un proveedor puede
+ * Busca TODOS los bloques BSP que vencen en una fecha dada. Un proveedor puede
  * consolidar varios rangos de emisión en la misma fecha de pago.
  * @returns {Array<{ desde, hasta, fechaPago, mes, proveedorId, rangoLabel, rangoCorto }>}
  */
-export function getBloquesBCPPorVencimiento(
+export function getBloquesBSPPorVencimiento(
   configMensual,
   proveedorId,
   fechaVencimiento,
@@ -148,18 +148,18 @@ export function getBloquesBCPPorVencimiento(
 }
 
 /**
- * Busca si una fecha de vencimiento dada corresponde a un bloque BCP del proveedor.
+ * Busca si una fecha de vencimiento dada corresponde a un bloque BSP del proveedor.
  * Devuelve el primero (compatibilidad); para varios bloques usar
- * `getBloquesBCPPorVencimiento`.
+ * `getBloquesBSPPorVencimiento`.
  */
-export function getBloqueBCPPorVencimiento(
+export function getBloqueBSPPorVencimiento(
   configMensual,
   proveedorId,
   fechaVencimiento,
   mesFiltro
 ) {
   return (
-    getBloquesBCPPorVencimiento(
+    getBloquesBSPPorVencimiento(
       configMensual,
       proveedorId,
       fechaVencimiento,

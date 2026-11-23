@@ -152,7 +152,7 @@ El módulo de Pagos incluye un **reporte mensual de flujo de caja** que agrupa
 todas las obligaciones por **fecha de vencimiento** y muestra, para cada fecha,
 el **total general del mes por moneda** y el detalle auditable de cada ticket:
 cliente, nombres de pasajeros (si se cargaron), cantidad de PAX, cotización,
-destino, fecha de emisión y rango BCP. Los totales de monedas distintas nunca se
+destino, fecha de emisión y rango BSP. Los totales de monedas distintas nunca se
 suman entre sí. El reporte se puede exportar a CSV y permite registrar el pago
 de un ticket individual o de la liquidación completa del bloque.
 
@@ -179,12 +179,12 @@ Arreglos de cobro de la venta + tablero de ganancias.
 | Estados de cotización | `Borrador / Enviada / Aceptada / Pagada / Vencida` |
 | Ciclo del aéreo | `estadoVuelo` `SinReservar / Reservado / Emitido` + `fechaReserva` / `fechaEmision` en el servicio |
 | Bloques "día de emisión → fecha de pago" | `src/components/Configuracion/ConfiguracionMensualView.jsx` (por proveedor y por mes; manual, regla, plantilla, copia y cobertura) |
-| Cálculo de la fecha de pago | `src/services/ttoService.js` → `getFechaPagoTTOO`, `getBloqueBCP`, `getBloquesBCPPorVencimiento` |
+| Cálculo de la fecha de pago | `src/services/ttoService.js` → `getFechaPagoTTOO`, `getBloqueBSP`, `getBloquesBSPPorVencimiento` |
 | Obligaciones + pagos parciales | `src/services/calendarioService.js` → `construirAgendaPagos`, `resumenAgendaPagos`, `aplicarPagos` |
 | Liquidación por proveedor + fecha | `src/services/calendarioService.js` → `liquidacionesPorProveedorYFecha`, `repartirPagoEnLiquidacion` |
-| Reporte de flujo de caja + CSV | `src/components/Cobranzas/FlujoCajaBCP.jsx` + `totalesPorMoneda`, `agruparPorFechaVencimiento`, `generarCSVFlujoCaja` |
+| Reporte de flujo de caja + CSV | `src/components/Cobranzas/FlujoCajaBSP.jsx` + `totalesPorMoneda`, `agruparPorFechaVencimiento`, `generarCSVFlujoCaja` |
 | Calendario / cuentas a pagar | `src/components/Cobranzas/CalendarioPagosView.jsx` |
-| Nombres de pasajeros | `CotizadorWizard.jsx` → `pasajeros[]`; se muestran en `FlujoCajaBCP` y en el CSV |
+| Nombres de pasajeros | `CotizadorWizard.jsx` → `pasajeros[]`; se muestran en `FlujoCajaBSP` y en el CSV |
 | Sincronización con Drive | `src/services/driveService.js` + `google-apps-script/Code.gs` (v3.1) |
 
 Vocabulario de datos (lo que "existe" en la app):

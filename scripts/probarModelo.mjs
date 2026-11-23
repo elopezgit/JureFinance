@@ -24,8 +24,8 @@ import {
 import {
   validateBloques,
   generarBloquesDesdeRegla,
-  getBloqueBCP,
-  getBloquesBCPPorVencimiento,
+  getBloqueBSP,
+  getBloquesBSPPorVencimiento,
   desplazarBloquesAMes,
   diasDelMes
 } from '../src/services/ttoService.js';
@@ -160,61 +160,61 @@ check(
     JSON.stringify(items1.map((i) => (i.ofertas || []).map((o) => o.id)))
 );
 
-// 7) BCP (Aero Bimestral): rangos de emisión → fecha de pago y acumulación por umbral.
+// 7) BSP (Aero Bimestral): rangos de emisión → fecha de pago y acumulación por umbral.
 const configNov = buildConfiguracionMensual(['2026-11', '2026-12']);
 check(
-  'BCP Aero Nov: emisión 03/11 cae en el umbral 01-07 con pago 13/11',
-  getBloqueBCP(configNov, 'Aero', '2026-11-03')?.fechaPago === '2026-11-13',
-  `=> ${getBloqueBCP(configNov, 'Aero', '2026-11-03')?.fechaPago}`
+  'BSP Aero Nov: emisión 03/11 cae en el umbral 01-07 con pago 13/11',
+  getBloqueBSP(configNov, 'Aero', '2026-11-03')?.fechaPago === '2026-11-13',
+  `=> ${getBloqueBSP(configNov, 'Aero', '2026-11-03')?.fechaPago}`
 );
 check(
-  'BCP Aero Nov: emisión 10/11 cae en el umbral 08-15 con pago 19/11',
-  getBloqueBCP(configNov, 'Aero', '2026-11-10')?.fechaPago === '2026-11-19',
-  `=> ${getBloqueBCP(configNov, 'Aero', '2026-11-10')?.fechaPago}`
+  'BSP Aero Nov: emisión 10/11 cae en el umbral 08-15 con pago 19/11',
+  getBloqueBSP(configNov, 'Aero', '2026-11-10')?.fechaPago === '2026-11-19',
+  `=> ${getBloqueBSP(configNov, 'Aero', '2026-11-10')?.fechaPago}`
 );
 check(
-  'BCP Aero Nov: emisión 18/11 cae en el umbral 16-22 con pago 27/11',
-  getBloqueBCP(configNov, 'Aero', '2026-11-18')?.fechaPago === '2026-11-27',
-  `=> ${getBloqueBCP(configNov, 'Aero', '2026-11-18')?.fechaPago}`
+  'BSP Aero Nov: emisión 18/11 cae en el umbral 16-22 con pago 27/11',
+  getBloqueBSP(configNov, 'Aero', '2026-11-18')?.fechaPago === '2026-11-27',
+  `=> ${getBloqueBSP(configNov, 'Aero', '2026-11-18')?.fechaPago}`
 );
 check(
-  'BCP Aero Nov: emisión 25/11 cae en el umbral 23-30 con pago 04/12',
-  getBloqueBCP(configNov, 'Aero', '2026-11-25')?.fechaPago === '2026-12-04',
-  `=> ${getBloqueBCP(configNov, 'Aero', '2026-11-25')?.fechaPago}`
+  'BSP Aero Nov: emisión 25/11 cae en el umbral 23-30 con pago 04/12',
+  getBloqueBSP(configNov, 'Aero', '2026-11-25')?.fechaPago === '2026-12-04',
+  `=> ${getBloqueBSP(configNov, 'Aero', '2026-11-25')?.fechaPago}`
 );
 check(
-  'BCP Aero Dic: emisión 03/12 cae en el umbral 01-07 con pago 14/12',
-  getBloqueBCP(configNov, 'Aero', '2026-12-03')?.fechaPago === '2026-12-14',
-  `=> ${getBloqueBCP(configNov, 'Aero', '2026-12-03')?.fechaPago}`
+  'BSP Aero Dic: emisión 03/12 cae en el umbral 01-07 con pago 14/12',
+  getBloqueBSP(configNov, 'Aero', '2026-12-03')?.fechaPago === '2026-12-14',
+  `=> ${getBloqueBSP(configNov, 'Aero', '2026-12-03')?.fechaPago}`
 );
 check(
-  'BCP Aero Dic: emisión 10/12 cae en el umbral 08-15 con pago 21/12',
-  getBloqueBCP(configNov, 'Aero', '2026-12-10')?.fechaPago === '2026-12-21',
-  `=> ${getBloqueBCP(configNov, 'Aero', '2026-12-10')?.fechaPago}`
+  'BSP Aero Dic: emisión 10/12 cae en el umbral 08-15 con pago 21/12',
+  getBloqueBSP(configNov, 'Aero', '2026-12-10')?.fechaPago === '2026-12-21',
+  `=> ${getBloqueBSP(configNov, 'Aero', '2026-12-10')?.fechaPago}`
 );
 check(
-  'BCP Aero Dic: emisión 18/12 cae en el umbral 16-22 con pago 30/12',
-  getBloqueBCP(configNov, 'Aero', '2026-12-18')?.fechaPago === '2026-12-30',
-  `=> ${getBloqueBCP(configNov, 'Aero', '2026-12-18')?.fechaPago}`
+  'BSP Aero Dic: emisión 18/12 cae en el umbral 16-22 con pago 30/12',
+  getBloqueBSP(configNov, 'Aero', '2026-12-18')?.fechaPago === '2026-12-30',
+  `=> ${getBloqueBSP(configNov, 'Aero', '2026-12-18')?.fechaPago}`
 );
 check(
-  'BCP Aero Dic: emisión 28/12 cae en el umbral 23-31 con pago 07/01',
-  getBloqueBCP(configNov, 'Aero', '2026-12-28')?.fechaPago === '2027-01-07',
-  `=> ${getBloqueBCP(configNov, 'Aero', '2026-12-28')?.fechaPago}`
+  'BSP Aero Dic: emisión 28/12 cae en el umbral 23-31 con pago 07/01',
+  getBloqueBSP(configNov, 'Aero', '2026-12-28')?.fechaPago === '2027-01-07',
+  `=> ${getBloqueBSP(configNov, 'Aero', '2026-12-28')?.fechaPago}`
 );
 
-const cotizacionBCP = {
-  id: 'COT-BCP-1',
-  cliente: 'Cliente BCP',
+const cotizacionBSP = {
+  id: 'COT-BSP-1',
+  cliente: 'Cliente BSP',
   pax: 1,
   pasajeros: ['Ana Pérez'],
   moneda: 'USD',
   servicios: {
     items: [
-      ['srv-bcp-1', '2026-11-03', 1000],
-      ['srv-bcp-2', '2026-11-05', 2000],
-      ['srv-bcp-3', '2026-11-02', 1250],
-      ['srv-bcp-4', '2026-11-10', 1500]
+      ['srv-bsp-1', '2026-11-03', 1000],
+      ['srv-bsp-2', '2026-11-05', 2000],
+      ['srv-bsp-3', '2026-11-02', 1250],
+      ['srv-bsp-4', '2026-11-10', 1500]
     ].map(([id, fechaEmision, costo]) => ({
       id,
       tipo: 'aereo',
@@ -237,53 +237,53 @@ const cotizacionBCP = {
   }
 };
 
-const pagosBCP = derivarPagosDesdeCotizaciones([cotizacionBCP], configNov);
-check('BCP: deriva 4 obligaciones', pagosBCP.length === 4, `=> ${pagosBCP.length}`);
+const pagosBSP = derivarPagosDesdeCotizaciones([cotizacionBSP], configNov);
+check('BSP: deriva 4 obligaciones', pagosBSP.length === 4, `=> ${pagosBSP.length}`);
 check(
-  'BCP: todas las fechas salen del calendario (no manuales)',
-  pagosBCP.every((p) => p.origenVencimiento === 'bcp'),
-  `=> ${pagosBCP.map((p) => p.origenVencimiento).join(',')}`
+  'BSP: todas las fechas salen del calendario (no manuales)',
+  pagosBSP.every((p) => p.origenVencimiento === 'bsp'),
+  `=> ${pagosBSP.map((p) => p.origenVencimiento).join(',')}`
 );
 check(
-  'BCP: bloque 01-07 acumula 4250 el 13/11',
-  pagosBCP
+  'BSP: bloque 01-07 acumula 4250 el 13/11',
+  pagosBSP
     .filter((p) => p.fechaVencimiento === '2026-11-13')
     .reduce((acc, p) => acc + p.montoTotal, 0) === 4250
 );
 check(
-  'BCP: bloque 08-15 acumula 1500 el 19/11',
-  pagosBCP
+  'BSP: bloque 08-15 acumula 1500 el 19/11',
+  pagosBSP
     .filter((p) => p.fechaVencimiento === '2026-11-19')
     .reduce((acc, p) => acc + p.montoTotal, 0) === 1500
 );
 check(
-  'BCP: el rango visible es 01-07',
-  pagosBCP.find((p) => p.fechaVencimiento === '2026-11-13')?.rangoBCPCorto === '01-07',
-  `=> ${pagosBCP.find((p) => p.fechaVencimiento === '2026-11-13')?.rangoBCPCorto}`
+  'BSP: el rango visible es 01-07',
+  pagosBSP.find((p) => p.fechaVencimiento === '2026-11-13')?.rangoBSPCorto === '01-07',
+  `=> ${pagosBSP.find((p) => p.fechaVencimiento === '2026-11-13')?.rangoBSPCorto}`
 );
 check(
   'auditoría: los nombres de pasajeros llegan al pago',
-  pagosBCP.every((p) => p.pasajeros?.[0] === 'Ana Pérez'),
-  `=> ${pagosBCP[0]?.pasajeros?.join(', ')}`
+  pagosBSP.every((p) => p.pasajeros?.[0] === 'Ana Pérez'),
+  `=> ${pagosBSP[0]?.pasajeros?.join(', ')}`
 );
 
-const flujoBCP = agruparPorFechaVencimiento(pagosBCP);
-check('flujo: 2 fechas de pago', flujoBCP.length === 2, `=> ${flujoBCP.length}`);
-check('flujo: primera fecha 13/11', flujoBCP[0]?.fecha === '2026-11-13');
-check('flujo: 3 tickets el 13/11', flujoBCP[0]?.cantidad === 3, `=> ${flujoBCP[0]?.cantidad}`);
-check('flujo: total USD 4250 el 13/11', flujoBCP[0]?.monedas[0]?.montoTotal === 4250);
+const flujoBSP = agruparPorFechaVencimiento(pagosBSP);
+check('flujo: 2 fechas de pago', flujoBSP.length === 2, `=> ${flujoBSP.length}`);
+check('flujo: primera fecha 13/11', flujoBSP[0]?.fecha === '2026-11-13');
+check('flujo: 3 tickets el 13/11', flujoBSP[0]?.cantidad === 3, `=> ${flujoBSP[0]?.cantidad}`);
+check('flujo: total USD 4250 el 13/11', flujoBSP[0]?.monedas[0]?.montoTotal === 4250);
 
-const gruposProv = agruparTicketsPorProveedor(flujoBCP[0].items);
+const gruposProv = agruparTicketsPorProveedor(flujoBSP[0].items);
 check('flujo: agrupa por proveedor', gruposProv.length === 1 && gruposProv[0].proveedor === 'Aero');
 check('flujo: saldo del grupo 4250', gruposProv[0].saldo === 4250);
 
 // 7.b Liquidación y pago consolidado del bloque: un pago se reparte FIFO.
-const agendaBCP = construirAgendaPagos({
-  cotizaciones: [cotizacionBCP],
+const agendaBSP = construirAgendaPagos({
+  cotizaciones: [cotizacionBSP],
   configMensual: configNov
 });
-const liquidacionesBCP = liquidacionesPorProveedorYFecha(agendaBCP, configNov);
-const liq13 = liquidacionesBCP.find((l) => l.fechaVencimiento === '2026-11-13');
+const liquidacionesBSP = liquidacionesPorProveedorYFecha(agendaBSP, configNov);
+const liq13 = liquidacionesBSP.find((l) => l.fechaVencimiento === '2026-11-13');
 check(
   'liquidación: 13/11 agrupa 3 tickets por 4250',
   liq13?.cantidad === 3 && liq13?.montoTotal === 4250,
@@ -305,7 +305,7 @@ check(
 );
 
 const agendaPagada = construirAgendaPagos({
-  cotizaciones: [cotizacionBCP],
+  cotizaciones: [cotizacionBSP],
   configMensual: configNov,
   pagosTTOO: registrosBloque
 });
@@ -376,8 +376,8 @@ check(
   compartida.warnings.some((w) => w.includes('comparten'))
 );
 check(
-  'BCP: devuelve los dos bloques de una misma fecha',
-  getBloquesBCPPorVencimiento(
+  'BSP: devuelve los dos bloques de una misma fecha',
+  getBloquesBSPPorVencimiento(
     [
       {
         mes: '2026-11',
@@ -455,9 +455,9 @@ check(
 );
 
 // 11) CSV de auditoría con el detalle de tickets.
-const csv = generarCSVFlujoCaja(pagosBCP);
-check('CSV: incluye encabezado de rango BCP', csv.includes('Rango BCP'));
-check('CSV: incluye al cliente', csv.includes('Cliente BCP'));
+const csv = generarCSVFlujoCaja(pagosBSP);
+check('CSV: incluye encabezado de rango BSP', csv.includes('Rango BSP'));
+check('CSV: incluye al cliente', csv.includes('Cliente BSP'));
 check('CSV: incluye los nombres de pasajeros', csv.includes('Ana Pérez'));
 check('CSV: incluye el costo de un ticket', csv.includes('1000'));
 
@@ -468,7 +468,7 @@ const cotizacionJureTravel = {
   pax: 2,
   moneda: 'USD',
   fechaCotizacion: '2026-11-03',
-  // Los servicios terrestres vencen 7 días antes del viaje (no usan BCP).
+  // Los servicios terrestres vencen 7 días antes del viaje (no usan BSP).
   fechaViajeInicio: '2026-11-20',
   servicios: {
     items: [
@@ -481,7 +481,7 @@ const cotizacionJureTravel = {
         markupPct: 20,
         estadoVuelo: 'Emitido',
         fechaEmision: '2026-11-03', // Umbral 01 al 07 Noviembre -> vence 13 Noviembre
-        reglaVencimiento: 'bcp',
+        reglaVencimiento: 'bsp',
         ofertaCompraId: 'of-jt-aero',
         ofertas: [
           { id: 'of-jt-aero', proveedorId: 'aero', proveedor: 'Aero', costo: 1900, esBasePresupuesto: false },
@@ -539,7 +539,7 @@ const pagoHotelJT = pagosJT.find((p) => p.seccion === 'hotel');
 const pagoTrasJT = pagosJT.find((p) => p.seccion === 'traslados');
 check(
   'JT: vuelo emitido en Aero el 03/11 (umbral 01-07) vence el 13/11',
-  pagoVueloJT?.fechaVencimiento === '2026-11-13' && pagoVueloJT?.origenVencimiento === 'bcp',
+  pagoVueloJT?.fechaVencimiento === '2026-11-13' && pagoVueloJT?.origenVencimiento === 'bsp',
   `=> ${pagoVueloJT?.fechaVencimiento} (${pagoVueloJT?.origenVencimiento})`
 );
 check(

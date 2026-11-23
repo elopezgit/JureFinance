@@ -1,9 +1,9 @@
 // Smoke test de render (SSR) para detectar errores de JSX/props en las vistas
-// nuevas del módulo BCP. No reemplaza una prueba de navegador, pero valida que
+// nuevas del módulo BSP. No reemplaza una prueba de navegador, pero valida que
 // los componentes puedan montarse con datos reales del modelo.
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import FlujoCajaBCP from '../src/components/Cobranzas/FlujoCajaBCP.jsx';
+import FlujoCajaBSP from '../src/components/Cobranzas/FlujoCajaBSP.jsx';
 import ConfiguracionMensualView from '../src/components/Configuracion/ConfiguracionMensualView.jsx';
 import { construirAgendaPagos } from '../src/services/calendarioService.js';
 import { getMesActual } from '../src/services/ttoService.js';
@@ -61,9 +61,9 @@ const agenda = construirAgendaPagos({
   pagosTTOO: []
 });
 
-check('renderiza el reporte de flujo de caja BCP', () => {
+check('renderiza el reporte de flujo de caja BSP', () => {
   const html = renderToStaticMarkup(
-    React.createElement(FlujoCajaBCP, {
+    React.createElement(FlujoCajaBSP, {
       pagos: agenda,
       mes: '2026-11',
       onCambiarMes: () => {},
@@ -92,16 +92,16 @@ check('renderiza el reporte de flujo de caja BCP', () => {
   if (!html.includes('Ana Pérez')) {
     throw new Error('No se renderizaron los nombres de pasajeros');
   }
-  // El rango BCP se muestra en la "Vista detallada" (estado interno del
+  // El rango BSP se muestra en la "Vista detallada" (estado interno del
   // componente), que no se puede activar desde SSR. Se valida el dato del pago.
-  if (agenda[0]?.rangoBCPCorto !== '01-07') {
-    throw new Error('El pago no trae el rango BCP 01-07');
+  if (agenda[0]?.rangoBSPCorto !== '01-07') {
+    throw new Error('El pago no trae el rango BSP 01-07');
   }
 });
 
 check('renderiza el reporte vacío sin romper', () => {
   const html = renderToStaticMarkup(
-    React.createElement(FlujoCajaBCP, {
+    React.createElement(FlujoCajaBSP, {
       pagos: [],
       mes: '2026-11',
       onCambiarMes: () => {},
@@ -146,7 +146,7 @@ check('renderiza varias monedas sin mezclar totales', () => {
     }
   ];
   const html = renderToStaticMarkup(
-    React.createElement(FlujoCajaBCP, {
+    React.createElement(FlujoCajaBSP, {
       pagos: pagosMulti,
       mes: '2026-11',
       onCambiarMes: () => {},
@@ -169,7 +169,7 @@ check('renderiza varias monedas sin mezclar totales', () => {
   }
 });
 
-check('renderiza el administrador de configuración BCP', () => {
+check('renderiza el administrador de configuración BSP', () => {
   const mesActual = getMesActual();
   const html = renderToStaticMarkup(
     React.createElement(ConfiguracionMensualView, {
